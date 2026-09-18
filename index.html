@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/cards.css">
 <link rel="stylesheet" href="css/effects.css">
+<link rel="stylesheet" href="css/tutorial.css">
 
 <div class="app">
   <header class="top">
@@ -15,6 +16,7 @@
     <span class="sub">スートバトル ・ じゃんけん相性つきトランプバトル(モック)</span>
     <span class="spacer"></span>
     <button class="btn" id="muteBtn" type="button">🔊 音あり</button>
+    <button class="btn" id="tutHeadBtn" type="button">チュートリアル</button>
     <button class="btn" id="rulesBtn" type="button">ルール</button>
   </header>
 
@@ -78,7 +80,10 @@
   <div class="box">
     <div class="big win title">SUIT BATTLE</div>
     <p>音楽と効果音が鳴ります</p>
-    <button class="btn primary" id="startBtn" type="button">START</button>
+    <div class="actions center">
+      <button class="btn" id="tutBtn" type="button">チュートリアルを見る</button>
+      <button class="btn primary" id="startBtn" type="button">START</button>
+    </div>
     <p class="note">右上の「音あり/音なし」でいつでも切り替えられます</p>
   </div>
 </div>
@@ -109,6 +114,18 @@
     <div class="actions center">
       <button class="btn" id="buildResetBtn" type="button" title="この画面で行った変更をすべて取り消す">リセット</button>
       <button class="btn primary" id="buildNextBtn" type="button">次へ進む</button>
+    </div>
+  </div>
+</div>
+
+<div class="over tut" id="tutOver">
+  <div class="box tutbox">
+    <div class="tut-top"><span class="eyebrow">TUTORIAL <span id="tutStep">1 / 6</span></span><button class="tut-skip" id="tutSkip" type="button">スキップ ✕</button></div>
+    <div id="tutPage"></div>
+    <div class="tut-nav">
+      <button class="btn" id="tutPrev" type="button">← 前へ</button>
+      <div class="tut-dots" id="tutDots"></div>
+      <button class="btn primary" id="tutNext" type="button">次へ →</button>
     </div>
   </div>
 </div>
@@ -162,4 +179,5 @@
 <script src="js/render.js"></script>
 <script src="js/game.js"></script>
 <script src="js/build.js"></script>
+<script src="js/tutorial.js"></script>
 <script src="js/main.js"></script>
