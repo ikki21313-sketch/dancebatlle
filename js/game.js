@@ -285,7 +285,7 @@ async function gameOver(){
   if(win&&!last){
     /* between stages: the deck-build screen (placeholder for now) */
     $('buildEyebrow').textContent=`${name} CLEAR ・ ラウンド ${S.round} ・ 残りHP ${S.me} ・ 使用時間 ${Math.round(S.timeUsed/1000)}秒`;
-    renderBuild();$('buildOver').classList.add('show');return;
+    openBuild();$('buildOver').classList.add('show');return;
   }
   $('overTitle').textContent=win?'ALL CLEAR':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
   $('overText').textContent=win?`${STAGES.length}ステージすべてクリア! 最終ステージはラウンド ${S.round}、残りHP ${S.me}。総獲得ポイント ${RUN.points.toLocaleString()}`:`${name} ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;

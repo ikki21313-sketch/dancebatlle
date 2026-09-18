@@ -101,12 +101,15 @@
       </section>
     </div>
     <section class="bsec">
-      <h3>デッキ <span class="hint-s">「−」で1枚減らす、「+」で1枚追加。下段は追加 / 減少に必要なポイント(k=1000)</span></h3>
+      <h3>デッキ <span class="hint-s">「−」で1枚減らす(ポイントが返る)、「+」で1枚追加。数字の下の「なくす」でその数字を全スートまとめて減らす。下段は追加コスト / 返金(k=1000)。変更した数は黄色</span></h3>
       <div class="deck-grid" id="deckGrid"></div>
       <div class="deck-total" id="deckTotal"></div>
     </section>
     <div class="build-note" id="buildNote"></div>
-    <button class="btn primary" id="buildNextBtn" type="button">次へ進む</button>
+    <div class="actions center">
+      <button class="btn" id="buildResetBtn" type="button" title="この画面で行った変更をすべて取り消す">リセット</button>
+      <button class="btn primary" id="buildNextBtn" type="button">次へ進む</button>
+    </div>
   </div>
 </div>
 

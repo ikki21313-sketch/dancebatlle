@@ -37,7 +37,8 @@ const STAGES=[
 const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDamageClear:10000,onemore:4000,combo:3000,skillBreak:10000,round20:5000,round30:20000,time3m:10000,time2m:20000};
 /* deck build (DeckBuild.md) */
 const DECK_MIN=20,DECK_MAX_COPIES=6;
-const REMOVE_COST={1:100,2:10000,3:9000,4:8000,5:7000,6:6000,7:5000,8:4000,9:3000,10:2000,11:1000,12:-10000,13:-20000};
+/* points refunded when a card is removed (DeckBuild.md; 10 is read as 1000 from the 100×rank pattern) */
+const REMOVE_REFUND={1:100,2:200,3:300,4:400,5:500,6:600,7:700,8:800,9:900,10:1000,11:11000,12:12000,13:20000};
 const ADD_COST={1:100,2:2000,3:3000,4:4000,5:5000,6:6000,7:7000,8:8000,9:9000,10:10000,11:11000,12:12000,13:20000};
 const SKILLS={
   low2x:{name:'6以下のカードが常に2倍',desc:'6以下のカードは相性に関係なくパワー2倍(有利でも2倍)',cost:30000},

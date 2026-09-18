@@ -159,6 +159,17 @@ dialog li{margin:3px 0}
 .dg-suit.rock{color:var(--rock)}.dg-suit.scis{color:var(--scis)}.dg-suit.papr{color:var(--papr)}
 .dg-cell{display:flex;align-items:center;justify-content:center;gap:2px;background:var(--felt);border:1px solid var(--felt-line);border-radius:5px;padding:2px;min-height:28px}
 .dg-cell.zero b{color:var(--dim)}
+.dg-cell.changed b{color:#f2c100;text-shadow:0 0 8px rgba(242,193,0,.5)}
+.dg-cell.changed{border-color:#f2c100}
+.dg-row.bulk .dg-cell{background:transparent;border-color:transparent;min-height:0;padding:0}
+.dg-bulk{font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid var(--felt-line);background:var(--felt-soft);color:var(--muted);cursor:pointer;white-space:nowrap}
+.dg-bulk:hover:not(:disabled){border-color:var(--bad);color:var(--bad)}
+.dg-bulk:disabled{opacity:.25;cursor:not-allowed}
+.deck-total.changed b{color:#f2c100}
+.build .points b.changed{color:#f2c100}
+.skill-list .sk.changed{border-color:#f2c100}
+.skill-list .sk.changed .sk-body b{color:#f2c100}
+.skill-list .sk.changed .lv{color:#f2c100}
 .dg-cell b{font-family:var(--num);font-size:14px;min-width:14px;text-align:center}
 .dg-btn{width:18px;height:22px;border:none;border-radius:4px;background:var(--felt-soft);color:var(--ink);font-weight:700;cursor:pointer;line-height:1;padding:0}
 .dg-btn:hover:not(:disabled){background:var(--gold);color:var(--gold-ink)}
