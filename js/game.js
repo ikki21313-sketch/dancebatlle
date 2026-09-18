@@ -151,6 +151,7 @@ async function commit(){
   if(combo){await runCombo(combo,my);if(my!==seq)return;}
   if(!oneMore){await cutIn("Let's Dance!",'',2.6);if(my!==seq)return;}
   else await wait(BEAT*.5);
+  const T=oneMore?TEMPO.onemore:TEMPO.normal;document.documentElement.style.setProperty('--clashk',T.clash);
   let wins=0,dead=false;
   for(let i=0;i<3;i++){
     const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined);
@@ -163,7 +164,7 @@ async function commit(){
     }
     /* beat 1: the two cards move in */
     S.clash=i;render();
-    await wait(BEAT*.7*slow);if(my!==seq)return;
+    await wait(BEAT*T.clash*slow);if(my!==seq)return;
     /* impact: show verdict, then the number flies to the target's HP */
     S.results[i]=r;S.clash=-1;
     if(oneMore||lethal){sfx('slash');slashFx(i);quake(lethal?10:6);}
@@ -171,7 +172,7 @@ async function commit(){
     spark(i,oneMore||lethal);render();
     if(r.dmgCpu){
       const tier=dmgTier(r.dmgCpu);
-      await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal});if(my!==seq)return;
+      await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal,popBeats:T.pop,flyBeats:T.fly});if(my!==seq)return;
       S.cpu=Math.max(0,S.cpu-r.dmgCpu);sfxDamage(r.dmgCpu);
       while(S.cpu>0&&S.cpu<=S.nextHpTrigger&&S.nextHpTrigger>0){if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${S.nextHpTrigger} を割った。次のラウンドで敵のスキルが発動`,'bad');}S.nextHpTrigger-=SKILL_HP_STEP;}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
@@ -183,7 +184,7 @@ async function commit(){
     }
     if(r.dmgMe){
       const tier=dmgTier(r.dmgMe);
-      await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true});if(my!==seq)return;
+      await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true,popBeats:T.pop,flyBeats:T.fly});if(my!==seq)return;
       S.me=Math.max(0,S.me-r.dmgMe);sfxDamage(r.dmgMe);fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
       render();
     }
@@ -195,7 +196,7 @@ async function commit(){
     else if(r.dmgMe)log(`${i+1}枚目 ${who} → あなたに ${r.dmgMe} ダメージ${tag}`,'bad');
     else log(`${i+1}枚目 ${who} → 引き分け`);
     if(r.heal)log(`　♥ HPが ${r.heal} 回復 (${S.me})`,'gold');
-    await wait(BEAT*1.3);if(my!==seq)return;
+    await wait(BEAT*T.hold*(lethal?slow:1));if(my!==seq)return;
     if(S.me<=0||S.cpu<=0){dead=true;break;}
   }
   const played=S.picked.slice();

@@ -47,14 +47,14 @@ function burst(x,y,count,dist,ms,ring){
 }
 /* a damage number pops at `fromEl`, hangs a beat, then flies into `toEl` (the target's HP) */
 async function flyDamage(fromEl,toEl,value,tier,opts={}){
-  const {slow=1,toMe=false,lethal=false}=opts;
+  const {slow=1,toMe=false,lethal=false,popBeats,flyBeats}=opts;
   const a=center(fromEl),b=center(toEl);
   const el=document.createElement('div');el.className='dmgfly t'+tier+(toMe?' me':'')+(lethal?' lethal':'');
   const lbl=lethal?'LAST ATTACK':(TIER_LABEL[tier]||'');
   el.innerHTML=`<span class="n">${value}</span>`+(lbl?`<span class="lbl">${lbl}</span>`:'');
   el.style.left=a.x+'px';el.style.top=a.y+'px';$('fxlayer').appendChild(el);
   const dx=b.x-a.x,dy=b.y-a.y,arc=(toMe?1:-1)*Math.min(120,Math.abs(dy)*.35);
-  const pop=BEAT*(.55+tier*.08)*slow,fly=BEAT*(.55+tier*.05)*slow;
+  const pop=BEAT*(popBeats??(.55+tier*.08))*slow,fly=BEAT*(flyBeats??(.55+tier*.05))*slow;
   const T=(x,y,sc)=>`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;
   /* timers, not Animation.finished: finished-promises stall when the tab is not rendering */
   el.animate([
