@@ -2,7 +2,7 @@
 let S=null,timerId=null,uid=0,seq=0;
 /* RUN: carried across stages (points, deck composition, skills). S: one battle */
 let RUN=null;
-function newRun(){RUN={points:0,deck:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false}};}
+function newRun(){RUN={points:0,deck:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false},checkpoint:null};}
 function addScore(key,label){
   const pts=SCORE[key];S.score+=pts;S.scoreLog.push({label,pts});
   log(`　+${pts.toLocaleString()} ${label}`,'gold');scoreToast(label,pts);$('scoreLbl').textContent=`SCORE ${S.score.toLocaleString()}`;
@@ -101,7 +101,7 @@ function freshState(stage=0){
   if(!RUN)newRun();
   const cpuMax=STAGES[stage].cpu;
   S={stage,cpuMax,me:MAX_ME,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
-    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:STAGES[stage].skill.cd,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
+    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:STAGES[stage].skill.cd,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
 /* a stage = one full battle. stages run 1 → build screen → 2 → build screen → 3 → all clear */
@@ -123,7 +123,7 @@ async function newGame(stage=0){
 }
 async function startRound(){
   const my=seq;
-  S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;S.cpuField=[];S.roundDmg=0;S.chainReady=false;
+  S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;S.cpuField=[];S.roundDmg=0;S.chainReady=false;S.triple7Ready=false;
   log(`ラウンド ${S.round}`,'r');
   render();
   if(S.round>1&&(S.round-1)%HEAT_EVERY===0&&S.limit>LIMIT_MIN){
@@ -175,12 +175,16 @@ async function commit(){
   let roundKills=0;
   const combo=detectCombo(S.picked);
   if(combo){await runCombo(combo,my);if(my!==seq)return;}
+  /* skill patterns (Triple Ace / Triple 7 / Royal Straight / Special Attack) */
+  const pat=skillPatterns(S.picked,oneMore,S.hand);
+  for(const [t,sub] of pat.cutins){sfx('onemore');await cutIn(t,'break',4,sub);if(my!==seq)return;log(`スキル発動: ${t} ${sub}`,'gold');}
+  if(pat.triple7)S.triple7Ready=true;
   if(!oneMore){await cutIn("Let's Dance!",'',2.6);if(my!==seq)return;}
   else await wait(BEAT*.5);
   const T=oneMore?TEMPO.onemore:TEMPO.normal;document.documentElement.style.setProperty('--clashk',T.clash);
   let wins=0,dead=false;
   for(let i=0;i<3;i++){
-    const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined);
+    const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined,pat.mods[i]);
     /* Last Attack: this hit would finish the CPU */
     const lethal=r.dmgCpu>0&&r.dmgCpu>=S.cpu,slow=lethal?3:1;
     if(lethal){
@@ -241,6 +245,7 @@ async function commit(){
   if(dead){endRoundScoring();gameOver();return;}
   const suitsDiffer=new Set(played.map(c=>c.suit)).size===3;
   if(!oneMore&&wins===3&&!suitsDiffer)log('3枚すべてに勝利。ただし同じスートが含まれるので1moreは発生しない');
+  if(!oneMore&&wins<3)log(`勝ち ${wins}/3 のため1moreなし`);
   if(!oneMore&&wins===3&&suitsDiffer){
     log('3枚すべてに勝利! 1more 発動。好きな3枚を追加で出せます','gold');
     addScore('onemore','1more');
@@ -251,6 +256,15 @@ async function commit(){
     render();
     sfx('onemore');omfxShow();
     await cutIn('1 More!','',2.6);if(my!==seq)return;
+    startTimer(S.limit);render();return;
+  }
+  if(oneMore&&S.triple7Ready){
+    /* skill: Triple 7 → top the hand up to its limit, then one more 1more (the 7+ chain can still follow) */
+    S.triple7Ready=false;
+    const before=S.hand.length;refill();
+    log(`スキル: トリプル7 → 手札を ${before} 枚から ${S.hand.length} 枚に補充してさらに1more!`,'gold');addScore('onemore','1more(トリプル7)');
+    S.phase='onemore';S.results=[null,null,null];render();
+    sfx('onemore');await cutIn('1 More!','',2.6,'トリプル7: 手札を補充してさらに1more');if(my!==seq)return;
     startTimer(S.limit);render();return;
   }
   if(oneMore&&S.chainReady){
@@ -291,7 +305,7 @@ async function gameOver(){
   }
   $('overTitle').textContent=win?'ALL CLEAR':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
   $('overText').textContent=win?`${STAGES.length}ステージすべてクリア! 最終ステージはラウンド ${S.round}、残りHP ${S.me}。総獲得ポイント ${RUN.points.toLocaleString()}`:`${name} ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
-  $('retryBtn').hidden=win;
+  $('retryBtn').hidden=win;$('retryBuildBtn').hidden=win||!(RUN&&RUN.checkpoint);
   $('over').classList.add('show');
 }
 
@@ -301,7 +315,7 @@ async function skipOneMore(){
   const my=seq;
   const remaining=pausedLeft!==null?pausedLeft:Math.max(0,(S.deadline||Date.now())-Date.now());
   S.timeUsed+=Math.max(0,S.limit-remaining);
-  stopTimer();S.picked=[];S.chainReady=false;S.phase='battle';
+  stopTimer();S.picked=[];S.chainReady=false;S.triple7Ready=false;S.phase='battle';
   log('1more をスキップ(手札を温存)');render();
   omfxHide();await wait(BEAT);if(my!==seq)return;
   endRoundScoring();

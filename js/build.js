@@ -11,7 +11,21 @@ function buySkill(k){
 }
 /* BUILD0: the run as it was when this build screen opened — used for Reset and for highlighting changes */
 let BUILD0=null;
-function openBuild(){BUILD0={points:RUN.points,deck:{...RUN.deck},skills:{...RUN.skills}};$('buildNote').textContent='';renderBuild();}
+function openBuild(){
+  BUILD0={points:RUN.points,deck:{...RUN.deck},skills:{...RUN.skills}};
+  /* checkpoint: the run right after the last stage clear, before any build edits — used by "ビルドからやり直す" on defeat */
+  RUN.checkpoint={stage:S.stage,points:RUN.points,deck:{...RUN.deck},skills:{...RUN.skills},score:S.score,scoreLog:S.scoreLog.slice(),eyebrow:$('buildEyebrow').textContent};
+  $('buildNote').textContent='';renderBuild();
+}
+/* defeat → go back to the build screen as it was after the previous stage clear */
+function retryFromBuild(){
+  const cp=RUN&&RUN.checkpoint;if(!cp)return;
+  seq++;stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();setSlowmo(false);
+  RUN.points=cp.points;RUN.deck={...cp.deck};RUN.skills={...cp.skills};
+  S.stage=cp.stage;S.score=cp.score;S.scoreLog=cp.scoreLog.slice();S.phase='over';
+  $('buildEyebrow').textContent=cp.eyebrow;
+  $('over').classList.remove('show');openBuild();buildNote('前のステージクリア直後の状態に戻しました');$('buildOver').classList.add('show');
+}
 function resetBuild(){if(!BUILD0)return;RUN.points=BUILD0.points;RUN.deck={...BUILD0.deck};RUN.skills={...BUILD0.skills};buildNote('この画面での変更を取り消しました');renderBuild();}
 function canAdd(key){const rank=+key.slice(1);return (RUN.deck[key]||0)<DECK_MAX_COPIES&&RUN.points>=ADD_COST[rank];}
 function canRemove(key){return (RUN.deck[key]||0)>0&&deckTotal()-1>=DECK_MIN;}

@@ -3,6 +3,7 @@ $('goBtn').addEventListener('click',()=>{ensureBgm();commit();});
 $('startBtn').addEventListener('click',()=>{$('startOver').classList.remove('show');newGame(0);});
 $('buildNextBtn').addEventListener('click',()=>{$('buildOver').classList.remove('show');newGame((S.stage||0)+1);});
 $('retryBtn').addEventListener('click',()=>newGame(S.stage||0));
+$('retryBuildBtn').addEventListener('click',retryFromBuild);
 $('muteBtn').addEventListener('click',()=>setMuted(!muted));
 $('pauseBtn').addEventListener('click',pauseTimer);
 $('skipBtn').addEventListener('click',()=>{ensureBgm();skipOneMore();});

@@ -20,9 +20,9 @@ function skillDeal(){const sk=stageCfg().skill,turn=sk.len-S.skillRounds+1;retur
 function sortHand(){S.hand.sort((a,b)=>SUIT_ORDER[a.suit]-SUIT_ORDER[b.suit]||b.rank-a.rank);}
 
 /* rules */
-function resolve(p,c,label){
+function resolve(p,c,label,mods={}){
   const pt=SUITS[p.suit].type,heal=pt==='heal'?p.rank:0;
-  let pv=pt==='heal'?0:p.rank,cv=c?c.rank:0,mul='';
+  let pv=pt==='heal'?0:(mods.base??p.rank),cv=c?c.rank:0,mul='';
   const sk=(typeof RUN!=='undefined'&&RUN)?RUN.skills:{};
   let m=1;
   if(c){const ct=SUITS[c.suit].type;
@@ -31,6 +31,9 @@ function resolve(p,c,label){
   }else{mul=label||'1more';}
   if(sk.low2x&&p.rank<=6&&m<2){m=2;mul=(mul?mul+' ':'')+'6以下×2';}
   pv*=m;
+  if(mods.mul)pv*=mods.mul;
+  if(mods.add)pv+=mods.add;
+  if(mods.tag)mul=(mul?mul+' ':'')+mods.tag;
   const diff=pv-cv;
   return {pv,cv,heal,mul,dmgCpu:diff>0?diff:0,dmgMe:diff<0?-diff:0,win:pv>cv};
 }

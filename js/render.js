@@ -96,6 +96,7 @@ function render(){
   $('lim').textContent=`制限 ${S.limit/1000}秒`;$('lim').classList.toggle('hot',S.limit<=10000);
   const hints={intro:'準備中…',deal:'CPUがカードを出しています…',select:S.picked.length<3?`手札から3枚を順番に選ぶ (${S.picked.length}/3) ・ 光る枠は${S.picked.length+1}枚目に有利 ・ ▼は不利(相手が2倍)`:(detectCombo(S.picked)?`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`:'3枚選択済み。決定を押してください'),combo:'コンボ発動!',onemore:'1more! 好きな3枚を選ぶ(数字がそのままダメージ)',battle:'バトル中…',over:'決着'};
   if(S.phase==='onemore'&&S.picked.length===3&&detectCombo(S.picked))hints.onemore=`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`;
+  if(sel&&S.picked.length===3){const pat=skillPatterns(S.picked,S.phase==='onemore',S.hand);if(pat.cutins.length)hints[S.phase]=`スキル成立: ${pat.cutins.map(c=>c[0]).join(' + ')}`+(detectCombo(S.picked)?` + ${COMBO_NAME[detectCombo(S.picked)]}`:'')+' 決定で発動';}
   $('hint').textContent=hints[S.phase]||'';
   if(!sel){$('sec').textContent='--';$('tbar').style.width='0%';pausedLeft=null;renderPause();}
 }

@@ -44,8 +44,30 @@ const SKILLS={
   low2x:{name:'6以下のカードが常に2倍',desc:'6以下のカードは相性に関係なくパワー2倍(有利でも2倍)',cost:30000},
   adv4x:{name:'相性有利で4倍',desc:'相性が有利なカードのパワーが2倍ではなく4倍になる',cost:20000},
   draw:{name:'毎ターン+1ドロー',desc:'手札の上限が+1(3段階まで重ねられる)',levels:[10000,20000,30000]},
-  chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000}
+  chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000},
+  tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:50000},
+  triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
+  royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+100',cost:10000},
+  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:10000}
 };
+/* skill patterns on the 3 played cards (normal battle and 1more alike) */
+function skillPatterns(cards,inOneMore,hand){
+  const sk=(typeof RUN!=='undefined'&&RUN)?RUN.skills:{};
+  const suits=new Set(cards.map(c=>c.suit)).size,sameRank=cards.every(c=>c.rank===cards[0].rank);
+  const out={mods:[{},{},{}],cutins:[]};
+  if(sk.tripleAce&&sameRank&&cards[0].rank===1&&suits===3){
+    const sum=hand.filter(c=>!cards.includes(c)).reduce((a,c)=>a+c.rank,0);
+    out.mods=out.mods.map(()=>({base:sum,tag:'トリプルエース'}));out.tripleAce=sum;out.cutins.push(['Triple Ace!',`Aのパワーが手札の合計 ${sum} に`]);
+  }
+  if(sk.triple7&&sameRank&&cards[0].rank===7&&suits===3){out.triple7=true;out.cutins.push(['Triple 7!','1moreのあと手札を補充してさらに1more']);}
+  if(sk.royal&&suits===1&&[11,12,13].every(r=>cards.some(c=>c.rank===r))){
+    out.mods=out.mods.map(m=>({...m,add:(m.add||0)+100,tag:(m.tag?m.tag+' ':'')+'ロイヤル+100'}));out.royal=true;out.cutins.push(['Royal Straight!','J・Q・Kのパワー +100']);
+  }
+  if(sk.special&&inOneMore&&sameRank&&suits===3){
+    out.mods=out.mods.map(m=>({...m,mul:(m.mul||1)*3,tag:(m.tag?m.tag+' ':'')+'Special ×3'}));out.special=true;out.cutins.push(['Special Attack!','同じ数字3枚 → パワー3倍']);
+  }
+  return out;
+}
 function baseDeckCounts(){const d={};for(const s of DECK_SUITS)for(let r=PLAYER_MIN_RANK;r<=PLAYER_MAX_RANK;r++)d[s+r]=1;return d;}
 /* battle cadence: ONE beat per card (タン・タン・タン). The strike lands at `clash` beats in; damage is applied
    right then (HP, shake, sound). The number's pop/fly is only afterglow and overlaps the next card.
