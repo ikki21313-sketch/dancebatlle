@@ -135,6 +135,7 @@ tools/sim.js でルールを再現した自動対戦ができる(node tools/sim.
   段階3: 15〜19  オレンジに点滅。「BIG HIT!」表示。着弾で画面が白くフラッシュ、揺れ大
   段階4: 20〜    赤白に点滅、最大サイズ。「SMASH!!」表示。着弾で赤フラッシュ+衝撃波リング、揺れ特大
 自分が受けるダメージも同じ段階で、相手のカードから自分のHP表示へ飛んでくる(色は赤系)
+着弾時の効果音: 5以下 dmageL.mp3 / 6〜15 dmageM.mp3 / 16以上 dmageH.mp3(与えるダメージも受けるダメージも同じ)
 段階のしきい値と大きさは mock.html の dmgTier / .dmgfly.tN で調整する
 
 
@@ -167,13 +168,14 @@ js/game.js                進行(状態, ラウンド, 選択, バトル, コン
 js/main.js                起動(ボタンの配線, ホットリロード)
   ※ モジュールではなく通常の <script> を上記の順で読み込む(file:// でも動くようにするため)。関数はグローバル
 tools/sim.js              バランス計測用シミュレーター
-mock.html                 分割前の単体HTML(比較用に残してある。以後は更新しない)
 music/Groovy_Ignition.mp3 BGM
 music/カードをめくる.mp3        CPUの配札音(参照用コピー: music/card_flip.mp3)
 music/カードを台の上に出す.mp3  手札選択音(参照用コピー: music/card_place.mp3)
 music/1more.mp3           1moreカットイン音(Revolutionのカットインでも使用)
 music/剣で斬る3.mp3        1moreバトルの斬撃音(参照用コピー: music/slash.mp3。Sword Comboのカットインでも使用)
 music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: music/fanfare.mp3)
+music/alert.mp3           敵スキル発動音
+music/dmageL.mp3 / dmageM.mp3 / dmageH.mp3  ダメージ着弾音(小/中/大)
 ※ mock.html からは ASCII 名のコピーを参照している
 
 ■ 敵のスキル
@@ -181,7 +183,7 @@ music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: m
   ・通常ラウンドが4回経過した(初回は5ラウンド目。スキル終了後は4ラウンドのクールタイム明け)
   ・相手のHPが50減るごと(150 / 100 / 50 を割ったとき)。スキル発動中に割った分は無視する
 発動時の演出
-  ・Enemy Skill Activation! カットイン(赤基調。副題で数字と残りラウンドを説明)
+  ・Enemy Skill Activation! カットイン(赤基調。副題で数字と残りラウンドを説明) 効果音: alert.mp3
   ・1moreのテープと同じ場所に、赤×黒の「DANGER!! DANGER!!」テープが貼られる(スキル中ずっと表示)
   ・バトルフィールドの枠が赤くなり「ENEMY SKILL」バッジが付く
 効果

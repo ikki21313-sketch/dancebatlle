@@ -69,7 +69,7 @@ async function maybeEnemySkill(my){
   S.hpTrigger=false;S.skillActive=true;S.skillRounds=SKILL_LEN;S.skillLevel++;
   const r=SKILL_BASE_RANK+S.skillLevel-1;
   log(`敵のスキル発動! ${SKILL_LEN}ラウンドの間、相手の場は ♦♣♠ の ${r}`,'bad');
-  omfxShow('dgfx');render();
+  sfx('alert');omfxShow('dgfx');render();
   await cutIn('Enemy Skill Activation!','enemy',5,`相手のカードが ${SKILL_LEN}ラウンドの間 すべて ${r} になる`);
 }
 async function endEnemySkillIfDue(my){
@@ -172,7 +172,7 @@ async function commit(){
     if(r.dmgCpu){
       const tier=dmgTier(r.dmgCpu);
       await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal});if(my!==seq)return;
-      S.cpu=Math.max(0,S.cpu-r.dmgCpu);
+      S.cpu=Math.max(0,S.cpu-r.dmgCpu);sfxDamage(r.dmgCpu);
       while(S.cpu>0&&S.cpu<=S.nextHpTrigger&&S.nextHpTrigger>0){if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${S.nextHpTrigger} を割った。次のラウンドで敵のスキルが発動`,'bad');}S.nextHpTrigger-=SKILL_HP_STEP;}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
       if(lethal){flash('big');quake(16);}
@@ -184,7 +184,7 @@ async function commit(){
     if(r.dmgMe){
       const tier=dmgTier(r.dmgMe);
       await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true});if(my!==seq)return;
-      S.me=Math.max(0,S.me-r.dmgMe);fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
+      S.me=Math.max(0,S.me-r.dmgMe);sfxDamage(r.dmgMe);fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
       render();
     }
     if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');render();}
