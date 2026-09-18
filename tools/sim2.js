@@ -11,7 +11,9 @@ const ONLY = opt('only'), POLICY = opt('policy') || 'all', STAGE_COUNT = Number(
 const SHIFT = Number(opt('shift') || 0);   // 調整実験用: 敵の出す数字の範囲を一律に +n (上限13)
 const S4P = Number(opt('s4') || 18), S5P = Number(opt('s5') || 22);   // 仮ステージのスキル威力(1回目。2回目は+2)
 const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル持続ラウンド +n
-const HP_LV = Number(opt('hp') || 0);   // 全ビルドに「最大HP+10」を n 段階持たせる(デッキビルドで買える想定)
+const HP_LV = Number(opt('hp') || 0);
+// S3 調整用: --s3p 威力(1回目) --s3w 白の威力 --s3len 持続 --s3cd CT --s3hp 敵HP --s3lo 7T〜の下限
+const S3P = Number(opt('s3p') || 15), S3W = Number(opt('s3w') || 13), S3LEN = Number(opt('s3len') || 2), S3CD = Number(opt('s3cd') || 3), S3HP = Number(opt('s3hp') || 300), S3LO = Number(opt('s3lo') || 10);   // 全ビルドに「最大HP+10」を n 段階持たせる(デッキビルドで買える想定)
 
 let seed = 12345; const rng = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const rnd = n => Math.floor(rng() * n), pick = a => a[rnd(a.length)];
@@ -22,7 +24,7 @@ const ME_HP = 30, HAND = 6, BEATS = { D: 'S', S: 'C', C: 'D' }, SUITS = 'DSC';
 const STAGES = [
   { name: 'S1 イッチメーン', cpu: 150, ranges: [[4, 3, 6], [6, 3, 8], [99, 7, 11]], skill: { cd: 4, hp: [100, 50], len: 1, cards: (lv) => ['D', 'C', 'S'].map(suit => ({ suit, rank: lv === 1 ? 13 : 14 })) } },
   { name: 'S2 ニーメン', cpu: 200, ranges: [[4, 5, 7], [6, 5, 9], [99, 7, 11]], skill: { cd: 4, hp: [150, 100, 50], len: 3, cards: (lv, turn) => { const suit = ['D', 'C', 'S'][turn - 1], r = lv === 1 ? 13 : 15; return [0, 1, 2].map(() => ({ suit, rank: r })); } } },
-  { name: 'S3 ラストリオン', cpu: 300, ranges: [[4, 7, 10], [6, 7, 12], [99, 10, 13]], skill: { cd: 3, hp: [200, 100], len: 1, cards: (lv) => { const r = lv === 1 ? 13 : 15, w = lv === 1 ? 11 : 12, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
+  { name: 'S3 ラストリオン', cpu: S3HP, ranges: [[4, 7, 10], [6, 7, 12], [99, S3LO, 13]], skill: { cd: S3CD, hp: [200, 100], len: S3LEN, cards: (lv) => { const r = lv === 1 ? S3P : S3P + 2, w = lv === 1 ? S3W : S3W + 1, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
   // ---- 仮置き(未定義) ----
   { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? S4P : S4P + 2; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
   { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 3, cards: (lv) => { const r = lv === 1 ? S5P : S5P + 2, w = S5P - 5 + (lv === 1 ? 0 : 2), wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },

@@ -28,10 +28,10 @@ const STAGES=[
      desc:level=>`3ラウンドの間、♦→♣→♠ の順に ${level===1?13:15} が3枚ずつ出る`}},
   {name:'STAGE 3',enemy:'ラストリオン',cpu:300,bgm:'music/stage3.mp3',
    ranges:[{until:4,min:7,max:10},{until:6,min:7,max:12},{until:Infinity,min:10,max:13}],
-   skill:{cd:3,hp:[200,100],len:1,
-     cards:(level,turn)=>{const r=level===1?13:15,w=level===1?11:12,wi=Math.floor(Math.random()*3);
+   skill:{cd:3,hp:[200,100],len:2,
+     cards:(level,turn)=>{const r=level===1?15:17,w=level===1?13:14,wi=Math.floor(Math.random()*3);
        return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
-     desc:level=>`♦♣♠ の ${level===1?13:15} と、相性のない ♥ の ${level===1?11:12} が1枚(1ラウンド)`}},
+     desc:level=>`2ラウンドの間、♦♣♠ の ${level===1?15:17} と、相性のない ♥ の ${level===1?13:14} が1枚`}},
 ];
 /* score (Score.md): points earned per stage, spent on the deck-build screen */
 const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDamageClear:10000,onemore:4000,combo:3000,skillBreak:10000,round20:5000,round30:20000,time3m:10000,time2m:20000};
