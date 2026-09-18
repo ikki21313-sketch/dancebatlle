@@ -2,7 +2,7 @@
 // 使い方: node tools/sim2.js [games per cell] [--stages 5] [--only 型名] [--policy optimal|mistake|all]
 // 現行ルール(ステージ設定・敵スキル・コンボ・スキル8種・1moreスキップ)を再現し、
 // ビルド型 × デッキの出来 × プレイングの質 ごとに、各ステージを「フルHPから単独で挑戦したときのクリア率」で出す。
-// ステージ4・5は未定義なので Stage.md の傾向から仮置き(STAGES_EXTRA)。
+// ステージ4・5は未定義なので Stage.md の傾向から仮置き(S4スキル20/22、S5スキル25/27)。同じカードは3枚まで(DECK_MAX_COPIES=3)。
 
 const args = process.argv.slice(2);
 const N = Number(args.find(a => /^\d+$/.test(a)) || 200);
@@ -21,8 +21,8 @@ const STAGES = [
   { name: 'S2 ニーメン', cpu: 200, ranges: [[4, 5, 7], [6, 5, 9], [99, 7, 11]], skill: { cd: 4, hp: [150, 100, 50], len: 3, cards: (lv, turn) => { const suit = ['D', 'C', 'S'][turn - 1], r = lv === 1 ? 13 : 15; return [0, 1, 2].map(() => ({ suit, rank: r })); } } },
   { name: 'S3 ラストリオン', cpu: 300, ranges: [[4, 7, 10], [6, 7, 12], [99, 10, 13]], skill: { cd: 3, hp: [200, 100], len: 1, cards: (lv) => { const r = lv === 1 ? 13 : 15, w = lv === 1 ? 11 : 12, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
   // ---- 仮置き(未定義) ----
-  { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? 14 : 15; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
-  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 2, cards: (lv) => { const r = lv === 1 ? 15 : 16, w = lv === 1 ? 12 : 13, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
+  { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? 20 : 22; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
+  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 2, cards: (lv) => { const r = lv === 1 ? 25 : 27, w = lv === 1 ? 20 : 22, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
 ].slice(0, STAGE_COUNT);
 
 function resolve(p, c, sk, mods = {}) {
@@ -153,18 +153,18 @@ const R = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 const BASE = counts([[R(3, 10), 'DSC', 1]]);
 const BUILDS = {
   '初期デッキ': { deck: BASE, skills: {}, variant: null },
-  'ロー2倍型(6以下×2)': { deck: counts([[[5, 6], 'DSC', 4], [[3, 4], 'DSC', 1]]), skills: { low2x: 1, draw: 1 },
-    variant: { deck: counts([[[5, 6], 'DSC', 4], [[3, 4], 'DSC', 1]]), skills: { draw: 1 } } },
+  'ロー2倍型(6以下×2)': { deck: counts([[[5, 6], 'DSC', 3], [[3, 4], 'DSC', 1]]), skills: { low2x: 1, draw: 1 },
+    variant: { deck: counts([[[5, 6], 'DSC', 3], [[3, 4], 'DSC', 1]]), skills: { draw: 1 } } },
   '相性4倍型': { deck: counts([[R(7, 10), 'DSC', 2]]), skills: { adv4x: 1, draw: 1 },
-    variant: { deck: counts([[R(7, 10), 'D', 4], [R(7, 10), 'SC', 1]]), skills: { adv4x: 1, draw: 1 } } },
+    variant: { deck: counts([[R(7, 10), 'D', 3], [R(7, 10), 'SC', 1]]), skills: { adv4x: 1, draw: 1 } } },
   'ドロー型(+3・連鎖)': { deck: counts([[R(5, 10), 'DSC', 1], [R(7, 10), 'DSC', 1]]), skills: { draw: 3, chain: 1 },
     variant: { deck: counts([[R(5, 10), 'DSC', 1], [R(7, 10), 'DSC', 1]]), skills: { draw: 1 } } },
   'ロイヤル型(JQK)': { deck: counts([[R(11, 13), 'DSC', 2], [[9, 10], 'DSC', 1]]), skills: { royal: 1, chain: 1 },
     variant: { deck: counts([[R(11, 13), 'DSC', 1], [R(7, 10), 'DSC', 1]]), skills: { royal: 1 } } },
-  'トリプル7型': { deck: counts([[[7], 'DSC', 6], [[8], 'DSC', 2]]), skills: { triple7: 1, special: 1, chain: 1 },
-    variant: { deck: counts([[[7], 'DSC', 3], [R(5, 10), 'DSC', 1]]), skills: { triple7: 1 } } },
-  'トリプルエース型': { deck: counts([[[1], 'DSC', 6], [[6], 'DSC', 2]]), skills: { tripleAce: 1, draw: 3 },
-    variant: { deck: counts([[[1], 'DSC', 3], [R(3, 10), 'DSC', 1]]), skills: { tripleAce: 1 } } },
+  'トリプル7型': { deck: counts([[[7], 'DSC', 3], [[8], 'DSC', 2], [[9, 10], 'DSC', 1]]), skills: { triple7: 1, special: 1, chain: 1 },
+    variant: { deck: counts([[[7], 'DSC', 2], [R(5, 10), 'DSC', 1]]), skills: { triple7: 1 } } },
+  'トリプルエース型': { deck: counts([[[1], 'DSC', 3], [[6], 'DSC', 2], [[5, 7], 'DSC', 1]]), skills: { tripleAce: 1, draw: 3 },
+    variant: { deck: counts([[[1], 'DSC', 2], [R(3, 10), 'DSC', 1]]), skills: { tripleAce: 1 } } },
 };
 
 // ---------------- run ----------------
