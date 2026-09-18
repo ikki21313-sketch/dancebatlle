@@ -32,6 +32,18 @@ const STAGES=[
      cards:(level,turn)=>{const r=level===1?15:17,w=level===1?13:14,wi=Math.floor(Math.random()*3);
        return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
      desc:level=>`2ラウンドの間、♦♣♠ の ${level===1?15:17} と、相性のない ♥ の ${level===1?13:14} が1枚`}},
+  /* ---- 仮置き(敵名・BGM・範囲は未定。tools/sim2.js の仮設定と同じ) ---- */
+  {name:'STAGE 4',enemy:'フォース(仮)',cpu:400,bgm:'music/stage3.mp3',
+   ranges:[{until:4,min:9,max:11},{until:6,min:9,max:13},{until:Infinity,min:11,max:13}],
+   skill:{cd:3,hp:[300,200,100],len:2,
+     cards:(level,turn)=>{const r=level===1?18:20;return [0,1,2].map(()=>({suit:pick(['D','C','S']),rank:r}));},
+     desc:level=>`2ラウンドの間、♦♣♠ のランダムな3枚が ${level===1?18:20} になる`}},
+  {name:'STAGE 5',enemy:'ラスボス(仮)',cpu:500,bgm:'music/stage3.mp3',
+   ranges:[{until:4,min:10,max:13},{until:6,min:11,max:13},{until:Infinity,min:12,max:13}],
+   skill:{cd:3,hp:[400,300,200,100],len:3,
+     cards:(level,turn)=>{const r=level===1?22:24,w=level===1?17:19,wi=Math.floor(Math.random()*3);
+       return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
+     desc:level=>`3ラウンドの間、♦♣♠ の ${level===1?22:24} と、相性のない ♥ の ${level===1?17:19} が1枚`}},
 ];
 /* score (Score.md): points earned per stage, spent on the deck-build screen */
 const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDamageClear:10000,onemore:4000,combo:3000,skillBreak:10000,round20:5000,round30:20000,time3m:10000,time2m:20000};

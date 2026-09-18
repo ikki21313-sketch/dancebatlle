@@ -5,7 +5,7 @@ const col=(card,cap,capCls='')=>{const c=el('div','tut-col');c.appendChild(card)
 
 const TUTORIAL=[
   {title:'Suit Battle',lead:'トランプでじゃんけん。相性を読んで、数字で殴る。それだけ。',
-   body:'♦がグー、♠がチョキ、♣がパー。相手のカードを見てから出せるから、読み勝ちは自分次第。<br>3ステージ勝ち抜きで <span class="k">ALL CLEAR</span>。',
+   body:'♦がグー、♠がチョキ、♣がパー。相手のカードを見てから出せるから、読み勝ちは自分次第。<br>5ステージ勝ち抜きで <span class="k">ALL CLEAR</span>。',
    illo(){const r=el('div','tut-row');r.append(tc('D',10),tc('S',9),tc('C',8));return r;}},
   {title:'3 Cards, 3 Clashes',lead:'相手が先に3枚見せる。こっちも3枚、順番どおりにぶつける。',
    shots:[{src:'img/tut_picked.png',cap:'手札をクリックした順に 1・2・3'},{src:'img/tut_clash.png',cap:'1枚目同士、2枚目同士…で勝負。差がダメージ'}],
