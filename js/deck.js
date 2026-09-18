@@ -11,9 +11,11 @@ function detectCombo(cards){
   return null;
 }
 
-function cpuDeal(){const max=S.round<=EARLY_ROUNDS?EARLY_MAX_RANK:MAX_RANK;return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:MIN_RANK+Math.floor(Math.random()*(max-MIN_RANK+1))}));}
+function stageCfg(){return STAGES[S.stage||0];}
+/* enemy plays 3 random cards inside the stage's range for this round (the enemy 'deck' is a range, not a pile) */
+function cpuDeal(){const rg=stageCfg().ranges.find(r=>S.round<=r.until);return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:rg.min+Math.floor(Math.random()*(rg.max-rg.min+1))}));}
 function cardName(c){return SUITS[c.suit].sym+rankLabel(c.rank);}
-function skillDeal(){const r=SKILL_BASE_RANK+S.skillLevel-1;return 'DCS'.split('').map(suit=>({id:++uid,suit,rank:r,skill:true}));}
+function skillDeal(){const sk=stageCfg().skill,turn=sk.len-S.skillRounds+1;return sk.cards(S.skillLevel,turn).map(c=>({id:++uid,suit:c.suit,rank:c.rank,skill:true}));}
 
 function sortHand(){S.hand.sort((a,b)=>SUIT_ORDER[a.suit]-SUIT_ORDER[b.suit]||b.rank-a.rank);}
 

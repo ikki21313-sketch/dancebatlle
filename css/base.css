@@ -72,6 +72,8 @@ h1,h2{margin:0}
 .tbar i.urgent{background:var(--bad)}
 .actions{display:flex;gap:8px}
 .btn.debug{border-style:dashed;color:var(--muted);font-size:12px;padding:8px 10px}
+.btn.skip{border-color:var(--gold-deep);color:var(--gold)}
+.btn.skip[hidden]{display:none}
 .btn.debug.on{color:var(--gold);border-color:var(--gold);border-style:solid}
 .timer .sec.paused{color:var(--muted);animation:none}
 .hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:12px 8px;justify-items:center;padding:14px 8px 8px;background:var(--felt);border:1px solid var(--felt-line);border-radius:8px;transition:opacity .3s}

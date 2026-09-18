@@ -77,19 +77,19 @@ async function runCombo(k,my){
 
 async function maybeEnemySkill(my){
   if(S.skillActive)return;
+  const sk=stageCfg().skill;
   S.skillCd--;
   if(S.skillCd>0&&!S.hpTrigger)return;
-  S.hpTrigger=false;S.skillActive=true;S.skillRounds=SKILL_LEN;S.skillLevel++;
-  const r=SKILL_BASE_RANK+S.skillLevel-1;
-  log(`敵のスキル発動! ${SKILL_LEN}ラウンドの間、相手の場は ♦♣♠ の ${r}`,'bad');
+  S.hpTrigger=false;S.skillActive=true;S.skillRounds=sk.len;S.skillLevel++;
+  log(`${stageCfg().enemy} のスキル発動! ${sk.desc(S.skillLevel)}`,'bad');
   sfx('alert');omfxShow('dgfx');render();
-  await cutIn('Enemy Skill Activation!','enemy',5,`相手のカードが ${SKILL_LEN}ラウンドの間 すべて ${r} になる`);
+  await cutIn('Enemy Skill Activation!','enemy',5,sk.desc(S.skillLevel));
 }
 async function endEnemySkillIfDue(my){
   if(!S.skillActive)return;
   S.skillRounds--;
   if(S.skillRounds>0)return;
-  S.skillActive=false;S.skillCd=SKILL_CD;S.handMax+=1;
+  S.skillActive=false;S.skillCd=stageCfg().skill.cd;S.handMax+=1;
   omfxHide('dgfx');render();
   log(`Skill Break! 相手のスキルが切れた。手札上限が ${S.handMax} 枚に`,'gold');
   addScore('skillBreak','Skill Break');
@@ -101,7 +101,7 @@ function freshState(stage=0){
   if(!RUN)newRun();
   const cpuMax=STAGES[stage].cpu;
   S={stage,cpuMax,me:MAX_ME,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
-    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:cpuMax-SKILL_HP_STEP};
+    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:STAGES[stage].skill.cd,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
 /* a stage = one full battle. stages run 1 → build screen → 2 → build screen → 3 → all clear */
@@ -110,15 +110,15 @@ async function newGame(stage=0){
   if(stage===0)newRun();
   stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState(stage);
   $('log').innerHTML='';$('over').classList.remove('show');$('buildOver').classList.remove('show');
-  log(`${STAGES[stage].name} 開始 (CPU HP ${S.cpuMax})`,'r');
+  log(`${STAGES[stage].name} 開始 ・ 敵: ${STAGES[stage].enemy} (HP ${S.cpuMax})`,'r');
   render();
-  await cutIn(STAGES[stage].name,'alt',3,`${stage+1} / ${STAGES.length}`);
+  await cutIn(STAGES[stage].name,'alt',3,`${stage+1} / ${STAGES.length} ・ ${STAGES[stage].enemy}`);
   if(my!==seq)return;
   await cutIn('Get Ready?','alt');
   if(my!==seq)return;
   await cutIn('Go!');
   if(my!==seq)return;
-  playBgm();
+  playBgm(STAGES[stage].bgm);
   startRound();
 }
 async function startRound(){
@@ -200,7 +200,7 @@ async function commit(){
       const tier=dmgTier(r.dmgCpu);
       await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal,popBeats:T.pop,flyBeats:T.fly});if(my!==seq)return;
       S.cpu=Math.max(0,S.cpu-r.dmgCpu);sfxDamage(r.dmgCpu);S.roundDmg+=r.dmgCpu;
-      while(S.cpu>0&&S.cpu<=S.nextHpTrigger&&S.nextHpTrigger>0){if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${S.nextHpTrigger} を割った。次のラウンドで敵のスキルが発動`,'bad');}S.nextHpTrigger-=SKILL_HP_STEP;}
+      while(S.cpu>0&&S.hpTriggers.length&&S.cpu<=S.hpTriggers[0]){const th=S.hpTriggers.shift();if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${th} を割った。次のラウンドで敵のスキルが発動`,'bad');}}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
       if(lethal){flash('big');quake(16);}
       else if(tier>=4){flash('red');quake(12);}
@@ -293,6 +293,20 @@ async function gameOver(){
   $('over').classList.add('show');
 }
 
+/* 1more skip: end the round without playing the 1more (keeps the hand for later) */
+async function skipOneMore(){
+  if(S.phase!=='onemore')return;
+  const my=seq;
+  const remaining=pausedLeft!==null?pausedLeft:Math.max(0,(S.deadline||Date.now())-Date.now());
+  S.timeUsed+=Math.max(0,S.limit-remaining);
+  stopTimer();S.picked=[];S.chainReady=false;S.phase='battle';
+  log('1more をスキップ(手札を温存)');render();
+  omfxHide();await wait(BEAT);if(my!==seq)return;
+  endRoundScoring();
+  await endEnemySkillIfDue(my);if(my!==seq)return;
+  refill();
+  startRound();
+}
 function toggle(c){
   if(S.phase!=='select'&&S.phase!=='onemore')return;
   const k=S.picked.indexOf(c);

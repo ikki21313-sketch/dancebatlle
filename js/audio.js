@@ -10,7 +10,7 @@ try{muted=localStorage.getItem('sb-muted')==='1';}catch(e){}
 function sfx(k){if(muted)return;const a=sfxPool[k].cloneNode();a.volume=(k==='onemore'||k==='slash'||k==='alert'||k==='dmgH')?.9:.7;a.play().catch(()=>{});}
 /* damage impact sound by amount: <=5 L, 6-15 M, 16+ H */
 function sfxDamage(n){sfx(n<=5?'dmgL':n<=15?'dmgM':'dmgH');}
-function playBgm(){bgmWanted=true;bgm.muted=muted;bgm.currentTime=0;bgm.play().catch(()=>{});}
+function playBgm(src){bgmWanted=true;bgm.muted=muted;if(src&&!bgm.src.endsWith(src)){bgm.src=src;}bgm.currentTime=0;bgm.play().catch(()=>{});}
 function ensureBgm(){if(bgmWanted&&bgm.paused)bgm.play().catch(()=>{});}
 function stopBgm(){bgmWanted=false;bgm.pause();}
 function playFanfare(){fanfare.muted=muted;fanfare.currentTime=0;fanfare.play().catch(()=>{});}

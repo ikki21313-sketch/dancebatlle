@@ -3,16 +3,36 @@ const SUITS={
   D:{sym:'♦',type:'rock',label:'グー',cls:'rock',ico:'✊'},
   S:{sym:'♠',type:'scis',label:'チョキ',cls:'scis',ico:'✌'},
   C:{sym:'♣',type:'papr',label:'パー',cls:'papr',ico:'✋'},
-  H:{sym:'♥',type:'heal',label:'回復',cls:'heal',ico:'♥'}
+  H:{sym:'♥',type:'heal',label:'相性なし',cls:'heal',ico:'♥'}  /* enemy-only: no affinity either way */
 };
 const BEATS={rock:'scis',scis:'papr',papr:'rock'};
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rankLabel=r=>r<=13?RANKS[r-1]:String(r);
-/* enemy skill: fires after SKILL_CD normal rounds or when CPU HP crosses a SKILL_HP_STEP boundary; lasts SKILL_LEN rounds */
-const SKILL_CD=5,SKILL_LEN=2,SKILL_HP_STEP=50,SKILL_BASE_RANK=13;
 const MAX_ME=30,MAX_CPU=200,HAND=6,BEAT=450;
-/* stages: cleared in order, with a deck-build screen between them. cpu = that stage's CPU HP */
-const STAGES=[{name:'STAGE 1',cpu:200},{name:'STAGE 2',cpu:200},{name:'STAGE 3',cpu:200}];
+/* player's starting deck (Stage.md): 3〜10 of each suit, one copy each */
+const PLAYER_MIN_RANK=3,PLAYER_MAX_RANK=10;
+/* stages (Stage.md). ranges: what the enemy can play by round (until = last round the row applies to).
+   skill: cd = rounds between activations (fires on the cd-th round), hp = HP thresholds that trigger it,
+   len = rounds it lasts, cards(level,turn) = the 3 cards for that skill round, desc(level) = cut-in subtitle */
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const STAGES=[
+  {name:'STAGE 1',enemy:'イッチメーン',cpu:150,bgm:'music/Groovy_Ignition.mp3',
+   ranges:[{until:4,min:3,max:6},{until:6,min:3,max:8},{until:Infinity,min:7,max:11}],
+   skill:{cd:4,hp:[150,100],len:1,
+     cards:(level,turn)=>{const r=level===1?13:14;return ['D','C','S'].map(suit=>({suit,rank:r}));},
+     desc:level=>`相手の場が ♦♣♠ の ${level===1?13:14} になる(1ラウンド)`}},
+  {name:'STAGE 2',enemy:'ニーメン',cpu:200,bgm:'music/stage2.mp3',
+   ranges:[{until:4,min:5,max:7},{until:6,min:5,max:9},{until:Infinity,min:7,max:11}],
+   skill:{cd:4,hp:[150,100,50],len:3,
+     cards:(level,turn)=>{const r=level===1?13:15,suit=['D','C','S'][turn-1];return [0,1,2].map(()=>({suit,rank:r}));},
+     desc:level=>`3ラウンドの間、♦→♣→♠ の順に ${level===1?13:15} が3枚ずつ出る`}},
+  {name:'STAGE 3',enemy:'ラストリオン',cpu:300,bgm:'music/stage3.mp3',
+   ranges:[{until:4,min:7,max:10},{until:6,min:7,max:12},{until:Infinity,min:10,max:13}],
+   skill:{cd:3,hp:[200,100],len:1,
+     cards:(level,turn)=>{const r=level===1?13:15,w=level===1?11:12,wi=Math.floor(Math.random()*3);
+       return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
+     desc:level=>`♦♣♠ の ${level===1?13:15} と、相性のない ♥ の ${level===1?11:12} が1枚(1ラウンド)`}},
+];
 /* score (Score.md): points earned per stage, spent on the deck-build screen */
 const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDamageClear:10000,onemore:4000,combo:3000,skillBreak:10000,round20:5000,round30:20000,time3m:10000,time2m:20000};
 /* deck build (DeckBuild.md) */
@@ -25,7 +45,7 @@ const SKILLS={
   draw:{name:'毎ターン+1ドロー',desc:'手札の上限が+1(3段階まで重ねられる)',levels:[10000,20000,30000]},
   chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000}
 };
-function baseDeckCounts(){const d={};for(const s of DECK_SUITS)for(let r=MIN_RANK;r<=MAX_RANK;r++)d[s+r]=1;return d;}
+function baseDeckCounts(){const d={};for(const s of DECK_SUITS)for(let r=PLAYER_MIN_RANK;r<=PLAYER_MAX_RANK;r++)d[s+r]=1;return d;}
 /* battle cadence per card, in beats (clash → number pops → flies → hold). Fixed so 1,2,3 land on a steady rhythm.
    normal: 2.0 beats per card. onemore: 1.65 beats (a touch quicker). Last Attack multiplies everything by 3. */
 const TEMPO={normal:{clash:.55,pop:.45,fly:.35,hold:.65},onemore:{clash:.45,pop:.4,fly:.3,hold:.5}};
@@ -33,8 +53,6 @@ const TEMPO={normal:{clash:.55,pop:.45,fly:.35,hold:.65},onemore:{clash:.45,pop:
 const LIMIT_START=30000,LIMIT_STEP=5000,LIMIT_MIN=10000,HEAT_EVERY=2;
 /* deck config: hearts, A and 2 are removed for now */
 const DECK_SUITS='DSC',MIN_RANK=3,MAX_RANK=13;
-/* CPU plays at most this rank during the first EARLY_ROUNDS rounds */
-const EARLY_ROUNDS=4,EARLY_MAX_RANK=10;
 
 const COMBO_NAME={rev:'Three Card Revolution!',sword:'Sword Combo!',diamond:'Diamond Combo!',clover:'Clover Combo!'};
 const COMBO_DESC={

@@ -19,7 +19,7 @@
   </header>
 
   <section class="fighter cpu" id="cpuBox">
-    <span class="name">CPU</span>
+    <span class="name" id="cpuName">CPU</span>
     <div class="hpbar"><i id="cpuBar"></i></div>
     <span class="hpnum" id="cpuHp">200<small> / 200</small></span>
   </section>
@@ -45,6 +45,7 @@
     </div>
     <div class="actions">
       <button class="btn debug" id="pauseBtn" type="button" disabled title="デバッグ用: カウントダウンを止める">⏸ タイマー停止</button>
+      <button class="btn skip" id="skipBtn" type="button" hidden title="1moreを使わずにラウンドを終える(手札を温存)">1moreをスキップ</button>
       <button class="btn" id="clearBtn" type="button" disabled>選び直す</button>
       <button class="btn primary" id="goBtn" type="button" disabled>決定</button>
     </div>
@@ -124,8 +125,8 @@
   <h2>ルール</h2>
   <ul>
     <li>♦ダイヤ=グー、♠スペード=チョキ、♣クローバー=パー(♥ハートの回復は一旦なし)</li>
-    <li>使うのは各スートの3〜Kの33枚(A・2は一旦なし)。あなたHP30、CPU HP200。手札は6枚、CPUは3枚を先に出す</li>
-    <li>CPUは4ラウンド目までは10以下のカードしか出さない。5ラウンド目からはKまで出す</li>
+    <li>初期デッキは各スートの3〜10(24枚)。デッキビルドでA〜Kを追加できる。あなたHP30、手札は6枚</li>
+    <li>敵はステージごとに名前・HP・出せる数字の範囲・スキルが違う(1: イッチメーン HP150、2: ニーメン HP200、3: ラストリオン HP300)。序盤ほど小さい数字しか出さない</li>
     <li>それを見て手札から3枚を順に選ぶ。制限時間は30秒から始まり、2ラウンドごとの Heat Up! で5秒ずつ短くなる(下限10秒)。時間切れは足りない分を自動で補充</li>
     <li>1枚目・2枚目・3枚目の順に比較。数字が大きい方が差分ぶんダメージ</li>
     <li>相性が有利(グー&gt;チョキ&gt;パー&gt;グー)なら自分の数字を2倍で計算</li>
@@ -135,9 +136,9 @@
   </ul>
   <h2 style="font-size:15px">敵のスキル</h2>
   <ul>
-    <li>通常ラウンドが4回経過するか、CPUのHPが50減るごと(150/100/50を割ったとき)に、次のラウンドから発動</li>
-    <li>発動中の2ラウンドは、CPUの場が ♦♣♠ の同じ数字になる(1回目13、2回目14、3回目15…)</li>
-    <li>2ラウンド終わると Skill Break! で手札の上限が+1。そのあと4ラウンドのクールタイム</li>
+    <li>一定ラウンドごと(ステージ1・2は4ラウンド目、ステージ3は3ラウンド目)、または敵のHPがしきい値を割った次のラウンドに発動</li>
+    <li>内容はステージごと。1: ♦♣♠の13(2回目〜14)を1ラウンド / 2: ♦→♣→♠の13(2回目〜15)が3枚ずつ3ラウンド / 3: ♦♣♠の13(2回目〜15)と相性のない♥の11(2回目〜12)を1ラウンド</li>
+    <li>スキルが終わると Skill Break! で手札の上限が+1。そのあとクールタイム</li>
   </ul>
   <h2 style="font-size:15px">コンボ(同時に出した3枚で発動)</h2>
   <ul>

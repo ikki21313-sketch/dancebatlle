@@ -31,7 +31,7 @@ function backEl(){const d=document.createElement('div');d.className='card back';
 function render(){
   const sel=S.phase==='select'||S.phase==='onemore';
   const cpuMax=S.cpuMax||MAX_CPU;
-  $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
+  $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('cpuName').textContent=STAGES[S.stage||0].enemy;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
   $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${MAX_ME}</small>`;
   const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/MAX_ME*100)+'%';
   cb.classList.toggle('low',S.cpu<=cpuMax*.3);mb.classList.toggle('low',S.me<=MAX_ME*.3);
@@ -92,6 +92,7 @@ function render(){
   $('deckCnt').innerHTML=`山札 ${S.deck.length} ・ 手札 ${S.hand.length}/${S.handMax}${S.handMax>HAND?' <b>上限+'+(S.handMax-HAND)+'</b>':''}`;
   $('goBtn').disabled=!(sel&&S.picked.length===3);$('clearBtn').disabled=!sel||!S.picked.length;
   $('pauseBtn').disabled=!sel;renderPause();
+  $('skipBtn').hidden=S.phase!=='onemore';
   $('lim').textContent=`制限 ${S.limit/1000}秒`;$('lim').classList.toggle('hot',S.limit<=10000);
   const hints={intro:'準備中…',deal:'CPUがカードを出しています…',select:S.picked.length<3?`手札から3枚を順番に選ぶ (${S.picked.length}/3) ・ 光る枠は${S.picked.length+1}枚目に有利 ・ ▼は不利(相手が2倍)`:(detectCombo(S.picked)?`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`:'3枚選択済み。決定を押してください'),combo:'コンボ発動!',onemore:'1more! 好きな3枚を選ぶ(数字がそのままダメージ)',battle:'バトル中…',over:'決着'};
   if(S.phase==='onemore'&&S.picked.length===3&&detectCombo(S.picked))hints.onemore=`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`;
