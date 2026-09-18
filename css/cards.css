@@ -1,0 +1,61 @@
+/* スートバトル: カードの見た目(表/裏, 選択状態, 有利/不利, 強化タグ, コンボ・スキル時の変化) */
+/* cards */
+.card{position:relative;width:92px;height:128px;background:var(--paper);color:var(--paper-ink);border-radius:8px;border:4px solid var(--c);box-shadow:0 2px 6px rgba(0,0,0,.45);display:flex;flex-direction:column;justify-content:space-between;padding:4px 6px;font-family:var(--num);cursor:default;user-select:none;transition:transform .15s,box-shadow .15s}
+.card.rock{--c:var(--rock)}.card.scis{--c:var(--scis)}.card.papr{--c:var(--papr)}.card.heal{--c:var(--heal-line)}
+.card .corner{display:flex;flex-direction:column;line-height:1;font-weight:700;font-size:22px;color:var(--c)}
+.card.heal .corner{color:var(--rock)}
+.card .corner span{font-size:16px;font-family:var(--body)}
+.card .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.card .mid .hand-ico{font-size:34px;line-height:1}
+.card .mid .lbl{font-family:var(--body);font-weight:700;font-size:12px;color:var(--paper-muted);letter-spacing:.06em}
+.card .bottom{align-self:flex-end;transform:rotate(180deg);opacity:.75}
+.card.back{background:repeating-linear-gradient(45deg,#2a3f52 0 6px,#233543 6px 12px);border-color:#3f596d;color:var(--ink);align-items:center;justify-content:center}
+.card.back .q{font-size:40px;font-weight:700;color:var(--muted)}
+.card.sm{width:76px;height:106px;padding:3px 5px}
+.card.sm .corner{font-size:19px}.card.sm .mid .hand-ico{font-size:28px}.card.sm .mid .lbl{font-size:11px}
+.card.deal{animation:deal calc(var(--beat)*.8) cubic-bezier(.2,.9,.3,1.3)}
+@keyframes deal{0%{transform:translateY(-60px) rotate(-8deg) scale(.7);opacity:0}100%{transform:none;opacity:1}}
+.card.clash-cpu{animation:clashDown calc(var(--beat)*.7) cubic-bezier(.6,0,.4,1) forwards}
+.card.clash-me{animation:clashUp calc(var(--beat)*.7) cubic-bezier(.6,0,.4,1) forwards}
+@keyframes clashDown{0%{transform:none}55%{transform:translateY(-14px) rotate(-3deg)}100%{transform:translateY(38px) rotate(2deg)}}
+@keyframes clashUp{0%{transform:none}55%{transform:translateY(14px) rotate(3deg)}100%{transform:translateY(-38px) rotate(-2deg)}}
+.card.won{transform:translateY(-4px) scale(1.06);box-shadow:0 0 0 3px var(--gold),0 8px 18px rgba(0,0,0,.5);z-index:1}
+.card.lost{opacity:.55;filter:grayscale(.5)}
+.hand .card{cursor:pointer}
+.hand .card:hover{transform:translateY(-4px)}
+.hand .card.picked{transform:translateY(-10px);box-shadow:0 0 0 3px var(--gold),0 6px 14px rgba(0,0,0,.5)}
+.hand .card.picked::after{content:attr(data-order);position:absolute;top:-12px;right:-10px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--gold-ink);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:var(--num);border:2px solid var(--felt-deep)}
+.hand .card.adv{box-shadow:0 2px 6px rgba(0,0,0,.45),0 0 14px color-mix(in srgb,var(--c) 70%,transparent)}
+.hand .card.adv:hover{transform:translateY(-6px)}
+.card .ring{position:absolute;inset:-4px;border-radius:8px;padding:4px;overflow:hidden;pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.card .ring::before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent 0 62%,rgba(255,255,255,.55) 74%,#fff 80%,rgba(255,255,255,.55) 86%,transparent 96%);animation:ringSpin 1.6s linear infinite}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.hand .card.adv .lbl{color:var(--c)}
+.adv-tag{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);background:var(--c);color:#fff;font-family:var(--body);font-weight:900;font-size:10px;letter-spacing:.12em;padding:1px 7px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.hand .card.dis{filter:saturate(.55) brightness(.92)}
+.hand .card.dis .mid .hand-ico{opacity:.55}
+.dis-tag{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);background:#3b3f45;color:#d8dde2;border:1px solid #6a7078;font-family:var(--body);font-weight:900;font-size:10px;letter-spacing:.12em;padding:1px 7px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.dis-tag::before{content:"▼ ";color:var(--bad)}
+.hand .card.locked{opacity:.45;cursor:not-allowed}
+.hand .card.locked:hover{transform:none}
+
+.card.blown{animation:blow calc(var(--beat)*1.4) cubic-bezier(.3,0,.8,.4) forwards}
+@keyframes blow{0%{transform:none;opacity:1}30%{transform:translateY(8px) rotate(-6deg)}100%{transform:translate(var(--bx,120px),-260px) rotate(var(--br,540deg)) scale(.4);opacity:0}}
+.card .buff-tag{position:absolute;top:-9px;left:-8px;font-family:var(--body);font-weight:900;font-size:10px;letter-spacing:.08em;padding:1px 6px;border-radius:9px;color:#fff;background:var(--c);box-shadow:0 1px 4px rgba(0,0,0,.5);white-space:nowrap}
+.card.heal .buff-tag{color:var(--paper-ink)}
+.card.buffed{animation:buffPop calc(var(--beat)*2.2) cubic-bezier(.2,.9,.3,1.3) forwards;z-index:3}
+@keyframes buffPop{0%{transform:scale(.8) rotate(-4deg);box-shadow:0 0 0 0 #fff}25%{transform:scale(1.28) rotate(3deg);box-shadow:0 0 0 8px rgba(255,255,255,.85),0 0 46px #fff,0 0 80px var(--gold)}60%{transform:scale(1.2) rotate(-2deg);box-shadow:0 0 0 5px rgba(227,179,92,.9),0 0 36px var(--gold)}100%{transform:scale(1.08);box-shadow:0 0 0 3px var(--gold),0 0 18px rgba(227,179,92,.8)}}
+.card.buffdone{box-shadow:0 0 0 3px var(--gold),0 0 18px rgba(227,179,92,.8);transform:scale(1.08);z-index:2}
+.card.spawn{animation:spawn calc(var(--beat)*2.4) cubic-bezier(.2,.9,.3,1.3) forwards;z-index:3}
+@keyframes spawn{0%{transform:translateX(-60%) scale(.2) rotateY(90deg);opacity:0;box-shadow:0 0 0 0 #fff}35%{transform:translateX(-10%) scale(1.3) rotateY(0);opacity:1;box-shadow:0 0 0 8px rgba(255,255,255,.85),0 0 50px #fff,0 0 90px var(--rock)}70%{transform:scale(1.15)}100%{transform:scale(1.08);box-shadow:0 0 0 3px var(--gold),0 0 18px rgba(227,179,92,.8)}}
+.card .fx-label{position:absolute;left:50%;top:-30px;transform:translateX(-50%);font-family:var(--num);font-weight:700;font-size:26px;color:#fff;white-space:nowrap;pointer-events:none;text-shadow:0 0 12px var(--gold),0 0 24px var(--gold),0 2px 6px rgba(0,0,0,.7);animation:fxLabel calc(var(--beat)*2.2) ease-out forwards;z-index:4}
+@keyframes fxLabel{0%{opacity:0;transform:translate(-50%,16px) scale(.5)}25%{opacity:1;transform:translate(-50%,0) scale(1.3)}75%{opacity:1;transform:translate(-50%,-4px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-22px) scale(1)}}
+.card .fx-label.static{animation:none;opacity:1;font-size:16px;top:-22px}
+
+.card.clash-me.big{animation:clashUpBig calc(var(--beat)*.7) cubic-bezier(.5,0,.3,1) forwards}
+@keyframes clashUpBig{0%{transform:none}45%{transform:translateY(26px) rotate(6deg) scale(1.05)}100%{transform:translateY(-80px) rotate(-4deg) scale(1.18)}}
+
+.card.skill{box-shadow:0 0 0 2px #ff2a1a,0 0 22px rgba(255,42,26,.75);animation:skillPulse 1s ease-in-out infinite alternate}
+@keyframes skillPulse{to{box-shadow:0 0 0 3px #ff6a5a,0 0 40px rgba(255,42,26,1)}}
+.card.skill .buff-tag{background:#c81414;color:#fff}

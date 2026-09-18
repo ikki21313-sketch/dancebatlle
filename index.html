@@ -1,0 +1,126 @@
+<meta charset="utf-8">
+<title>スートバトル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/effects.css">
+
+<div class="app">
+  <header class="top">
+    <h1>SUIT BATTLE</h1>
+    <span class="sub">スートバトル ・ じゃんけん相性つきトランプバトル(モック)</span>
+    <span class="spacer"></span>
+    <button class="btn" id="muteBtn" type="button">🔊 音あり</button>
+    <button class="btn" id="rulesBtn" type="button">ルール</button>
+  </header>
+
+  <section class="fighter cpu" id="cpuBox">
+    <span class="name">CPU</span>
+    <div class="hpbar"><i id="cpuBar"></i></div>
+    <span class="hpnum" id="cpuHp">200<small> / 200</small></span>
+  </section>
+
+  <section class="field" id="field">
+    <span class="om-badge">1 MORE</span>
+    <span class="skill-badge" id="skillBadge">ENEMY SKILL</span>
+    <div class="lane" id="l0"><span class="idx">1枚目</span><div class="slot" id="c0"></div><div class="verdict" id="v0"></div><div class="slot" id="m0"></div></div>
+    <div class="lane" id="l1"><span class="idx">2枚目</span><div class="slot" id="c1"></div><div class="verdict" id="v1"></div><div class="slot" id="m1"></div></div>
+    <div class="lane" id="l2"><span class="idx">3枚目</span><div class="slot" id="c2"></div><div class="verdict" id="v2"></div><div class="slot" id="m2"></div></div>
+  </section>
+
+  <section class="fighter me" id="meBox">
+    <span class="name">あなた</span>
+    <div class="hpbar"><i id="meBar"></i></div>
+    <span class="hpnum" id="meHp">30<small> / 30</small></span>
+  </section>
+
+  <section class="control">
+    <div class="timer">
+      <div class="row"><span class="hint" id="hint">準備中…</span><span><span class="lim" id="lim">制限 30秒</span> <span class="sec" id="sec">--</span></span></div>
+      <div class="tbar"><i id="tbar" style="width:0%"></i></div>
+    </div>
+    <div class="actions">
+      <button class="btn debug" id="pauseBtn" type="button" disabled title="デバッグ用: カウントダウンを止める">⏸ タイマー停止</button>
+      <button class="btn" id="clearBtn" type="button" disabled>選び直す</button>
+      <button class="btn primary" id="goBtn" type="button" disabled>決定</button>
+    </div>
+  </section>
+
+  <div class="hand-head">
+    <h2>手札</h2>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--rock)"></i>♦ グー</span>
+      <span><i class="sw" style="background:var(--scis)"></i>♠ チョキ</span>
+      <span><i class="sw" style="background:var(--papr)"></i>♣ パー</span>
+    </div>
+    <span class="cnt" id="deckCnt">山札 27</span>
+  </div>
+  <div class="combo-note" id="comboNote" hidden><span class="nm" id="comboNoteName"></span><span class="step" id="comboNoteStep"></span></div>
+  <section class="hand" id="hand"></section>
+
+  <section class="log"><h2>ログ</h2><ol id="log"></ol></section>
+</div>
+
+<div class="omfx" id="omfx" hidden><div class="side l" id="om-l"></div><div class="side r" id="om-r"></div></div>
+<div class="omfx danger" id="dgfx" hidden><div class="side l" id="dg-l"></div><div class="side r" id="dg-r"></div></div>
+<div class="vignette"></div>
+<div class="fxlayer" id="fxlayer"></div>
+<div class="flashwhite" id="flashwhite"></div>
+<div class="dimmer" id="dimmer"></div>
+<div class="cutin" id="cutin"><div class="band"></div><div class="stack"><div class="txt" id="cutinTxt"></div><div class="sub" id="cutinSub"></div></div></div>
+
+<div class="over" id="startOver">
+  <div class="box">
+    <div class="big win title">SUIT BATTLE</div>
+    <p>音楽と効果音が鳴ります</p>
+    <button class="btn primary" id="startBtn" type="button">START</button>
+    <p class="note">右上の「音あり/音なし」でいつでも切り替えられます</p>
+  </div>
+</div>
+
+<div class="over" id="over">
+  <div class="box">
+    <div class="big" id="overTitle">WIN</div>
+    <p id="overText"></p>
+    <button class="btn primary" id="againBtn" type="button">もう一度</button>
+  </div>
+</div>
+
+<dialog id="rules">
+  <h2>ルール</h2>
+  <ul>
+    <li>♦ダイヤ=グー、♠スペード=チョキ、♣クローバー=パー(♥ハートの回復は一旦なし)</li>
+    <li>使うのは各スートの3〜Kの33枚(A・2は一旦なし)。あなたHP30、CPU HP200。手札は6枚、CPUは3枚を先に出す</li>
+    <li>CPUは4ラウンド目までは10以下のカードしか出さない。5ラウンド目からはKまで出す</li>
+    <li>それを見て手札から3枚を順に選ぶ。制限時間は30秒から始まり、2ラウンドごとの Heat Up! で5秒ずつ短くなる(下限10秒)。時間切れは足りない分を自動で補充</li>
+    <li>1枚目・2枚目・3枚目の順に比較。数字が大きい方が差分ぶんダメージ</li>
+    <li>相性が有利(グー&gt;チョキ&gt;パー&gt;グー)なら自分の数字を2倍で計算</li>
+    <li>3枚すべてに勝ち、かつ出した3枚がすべて違うスートなら <b>1more</b>。好きな3枚を追加で出し、数字がそのままダメージ</li>
+    <li>ラウンド後、手札が上限(はじめ6枚)になるまで補充。先にHP0になった方の負け</li>
+  </ul>
+  <h2 style="font-size:15px">敵のスキル</h2>
+  <ul>
+    <li>通常ラウンドが4回経過するか、CPUのHPが50減るごと(150/100/50を割ったとき)に、次のラウンドから発動</li>
+    <li>発動中の2ラウンドは、CPUの場が ♦♣♠ の同じ数字になる(1回目13、2回目14、3回目15…)</li>
+    <li>2ラウンド終わると Skill Break! で手札の上限が+1。そのあと4ラウンドのクールタイム</li>
+  </ul>
+  <h2 style="font-size:15px">コンボ(同時に出した3枚で発動)</h2>
+  <ul>
+    <li><b>同じ数字3枚</b> Three Card Revolution! 相手のカードがすべて吹き飛び、3枚とも数字ぶんフルダメージ。そのまま1more</li>
+    <li><b>♠3枚</b> Sword Combo! 残りの手札で各スートの一番低いカードがKになる。手札の上限が+1</li>
+    <li><b>♦3枚</b> Diamond Combo! 残りの手札で各スートの一番高いカードが1枚複製される。手札の上限が+1</li>
+    <li><b>♣3枚</b> Clover Combo! 残りの手札で一番枚数が少ないスートのカードがすべてKになる(同数なら両方)。手札の上限が+1</li>
+  </ul>
+  <p style="color:var(--muted);font-size:12px;margin:0 0 14px">J=11、Q=12、K=13として扱います。</p>
+  <form method="dialog"><button class="btn primary" type="submit">閉じる</button></form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/deck.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>

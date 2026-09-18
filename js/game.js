@@ -1,0 +1,241 @@
+// ゲーム進行(状態, ラウンド, 選択, バトル, コンボ, 敵スキル, タイマー, 決着)
+let S=null,timerId=null,uid=0,seq=0;
+
+async function runCombo(k,my){
+  const prev=S.phase;S.phase='combo';render();
+  const rest=S.hand.filter(c=>!S.picked.includes(c));
+  const bySuit=suit=>rest.filter(c=>c.suit===suit);
+  const note=(step)=>{const n=$('comboNote');n.hidden=false;n.className='combo-note '+k;$('comboNoteName').textContent=COMBO_NAME[k];$('comboNoteStep').textContent=step;};
+  const settle=(...cs)=>cs.forEach(c=>{c.flash=false;c.spawn=false;c.done=true;c.fxLabel='';});
+  const bumpMax=async(n)=>{S.handMax+=n;note(`手札の上限 +${n} → ${S.handMax}枚。毎ラウンド上限まで補充`);render();await wait(BEAT*3);};
+  if(k==='rev'){
+    log('コンボ! Three Card Revolution! 相手のカードが吹き飛ぶ','gold');
+    sfx('onemore');await cutIn(COMBO_NAME.rev,'rev',5,COMBO_DESC.rev);if(my!==seq)return;
+    note('相手の3枚が吹き飛ぶ! 3枚ともフルダメージ → そのまま1more');
+    if(!S.onemore){S.blown=true;render();await wait(BEAT*2.4);if(my!==seq)return;S.blown=false;S.revolution=true;render();}
+    await wait(BEAT*1.5);if(my!==seq)return;
+  }else if(k==='sword'){
+    sfx('slash');await cutIn(COMBO_NAME.sword,'sword',5,COMBO_DESC.sword);if(my!==seq)return;
+    const hit=[];
+    for(const suit of 'DSC'){const cs=bySuit(suit);if(!cs.length)continue;
+      const low=cs.reduce((a,b)=>b.rank<a.rank?b:a);
+      note(`${SUITS[suit].sym}の一番低い ${cardName(low)} → K`);
+      low.flash=true;low.fxLabel=`${rankLabel(low.rank)} → K`;low.rank=13;low.buff='sword';hit.push(`${cardName(low)}`);
+      render();await wait(BEAT*2.6);if(my!==seq)return;settle(low);}
+    if(!hit.length){note('対象の手札がありません');render();await wait(BEAT*2);}
+    log(`コンボ! Sword Combo! K化: ${hit.length?hit.join('  '):'なし'}`,'gold');
+    await bumpMax(1);if(my!==seq)return;
+    log(`　手札上限が ${S.handMax} 枚に`,'gold');
+  }else if(k==='diamond'){
+    await cutIn(COMBO_NAME.diamond,'diamond',5,COMBO_DESC.diamond);if(my!==seq)return;
+    const hit=[];
+    for(const suit of 'DSC'){const cs=bySuit(suit);if(!cs.length)continue;
+      const high=cs.reduce((a,b)=>b.rank>a.rank?b:a);
+      note(`${SUITS[suit].sym}の一番高い ${cardName(high)} を複製`);
+      high.flash=true;high.fxLabel='複製!';render();await wait(BEAT*1.6);if(my!==seq)return;
+      const clone={id:++uid,suit,rank:high.rank,buff:'copy',spawn:true,fxLabel:'+1'};S.hand.push(clone);hit.push(cardName(high));
+      sortHand();render();await wait(BEAT*2.6);if(my!==seq)return;settle(high,clone);}
+    if(!hit.length){note('対象の手札がありません');render();await wait(BEAT*2);}
+    log(`コンボ! Diamond Combo! 複製: ${hit.length?hit.join('  '):'なし'}`,'gold');
+    await bumpMax(1);if(my!==seq)return;
+    log(`　手札上限が ${S.handMax} 枚に`,'gold');
+  }else if(k==='clover'){
+    await cutIn(COMBO_NAME.clover,'clover',5,COMBO_DESC.clover);if(my!==seq)return;
+    const counts='DSC'.split('').map(suit=>({suit,cs:bySuit(suit)})).filter(x=>x.cs.length);
+    const hit=[];
+    if(counts.length){
+      const min=Math.min(...counts.map(x=>x.cs.length));
+      const targets=counts.filter(x=>x.cs.length===min);
+      note(`一番枚数が少ないスート: ${targets.map(x=>SUITS[x.suit].sym+'×'+min).join(' と ')} → すべて K`);
+      render();await wait(BEAT*2);if(my!==seq)return;
+      for(const t of targets){
+        for(const c of t.cs){c.flash=true;c.fxLabel=`${rankLabel(c.rank)} → K`;c.rank=13;c.buff='clover';hit.push(cardName(c));}
+        note(`${SUITS[t.suit].sym}の ${t.cs.length} 枚がすべて K に`);
+        render();await wait(BEAT*2.8);if(my!==seq)return;settle(...t.cs);}
+    }else{note('対象の手札がありません');render();await wait(BEAT*2);}
+    log(`コンボ! Clover Combo! K化: ${hit.length?hit.join('  '):'なし'}`,'gold');
+    await bumpMax(1);if(my!==seq)return;
+    log(`　手札上限が ${S.handMax} 枚に`,'gold');
+  }
+  S.hand.forEach(c=>{delete c.flash;delete c.spawn;delete c.done;delete c.fxLabel;});
+  sortHand();$('comboNote').hidden=true;
+  S.phase=prev;render();
+}
+
+async function maybeEnemySkill(my){
+  if(S.skillActive)return;
+  S.skillCd--;
+  if(S.skillCd>0&&!S.hpTrigger)return;
+  S.hpTrigger=false;S.skillActive=true;S.skillRounds=SKILL_LEN;S.skillLevel++;
+  const r=SKILL_BASE_RANK+S.skillLevel-1;
+  log(`敵のスキル発動! ${SKILL_LEN}ラウンドの間、相手の場は ♦♣♠ の ${r}`,'bad');
+  omfxShow('dgfx');render();
+  await cutIn('Enemy Skill Activation!','enemy',5,`相手のカードが ${SKILL_LEN}ラウンドの間 すべて ${r} になる`);
+}
+async function endEnemySkillIfDue(my){
+  if(!S.skillActive)return;
+  S.skillRounds--;
+  if(S.skillRounds>0)return;
+  S.skillActive=false;S.skillCd=SKILL_CD;S.handMax+=1;
+  omfxHide('dgfx');render();
+  log(`Skill Break! 相手のスキルが切れた。手札上限が ${S.handMax} 枚に`,'gold');
+  await cutIn('Skill Break!','break',4,`相手のスキルが切れた。手札の上限 +1 → ${S.handMax}枚`);
+}
+
+/* ---- game flow ---- */
+function freshState(){
+  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:MAX_CPU-SKILL_HP_STEP};
+  refill();
+}
+async function newGame(){
+  const my=++seq;
+  stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
+  $('log').innerHTML='';$('over').classList.remove('show');
+  render();
+  await cutIn('Get Ready?','alt');
+  if(my!==seq)return;
+  await cutIn('Go!');
+  if(my!==seq)return;
+  playBgm();
+  startRound();
+}
+async function startRound(){
+  const my=seq;
+  S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;S.cpuField=[];
+  log(`ラウンド ${S.round}`,'r');
+  render();
+  if(S.round>1&&(S.round-1)%HEAT_EVERY===0&&S.limit>LIMIT_MIN){
+    const before=S.limit;S.limit=Math.max(LIMIT_MIN,S.limit-LIMIT_STEP);
+    log(`Heat Up! 制限時間が ${before/1000}秒 → ${S.limit/1000}秒`,'bad');render();
+    await cutIn('Heat Up!','heat',4,`制限時間 ${before/1000}秒 → ${S.limit/1000}秒`);if(my!==seq)return;
+  }
+  await maybeEnemySkill(my);if(my!==seq)return;
+  S.cpuField=S.skillActive?skillDeal():cpuDeal();
+  log(`　CPUの場: ${S.cpuField.map(cardName).join('  ')}${S.skillActive?'  [敵スキル 残り'+S.skillRounds+'ラウンド]':''}`);
+  render();
+  await wait(BEAT*.5);
+  for(let i=0;i<3;i++){S.dealt=i+1;sfx('flip');render();await wait(BEAT);if(my!==seq)return;}
+  await cutIn('Setup!','alt',2);
+  if(my!==seq)return;
+  S.phase='select';startTimer(S.limit);render();
+}
+
+/* timer */
+let pausedLeft=null;
+function startTimer(ms){
+  stopTimer();pausedLeft=null;S.deadline=Date.now()+ms;
+  timerId=setInterval(()=>{const left=Math.max(0,S.deadline-Date.now());renderTimer(left);if(left<=0){stopTimer();commit();}},100);
+  renderTimer(ms);
+}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null;}}
+function pauseTimer(){
+  if(pausedLeft!==null){const left=pausedLeft;pausedLeft=null;S.deadline=Date.now()+left;
+    timerId=setInterval(()=>{const l=Math.max(0,S.deadline-Date.now());renderTimer(l);if(l<=0){stopTimer();commit();}},100);}
+  else if(timerId){stopTimer();pausedLeft=Math.max(0,S.deadline-Date.now());}
+  renderPause();
+}
+
+function autoFill(){
+  if(S.picked.length>=3)return;
+  const rest=S.hand.filter(c=>!S.picked.includes(c));
+  while(S.picked.length<3&&rest.length)S.picked.push(rest.shift());
+  log('時間切れ。足りない分は手札から自動で選びました');
+}
+
+async function commit(){
+  if(S.phase!=='select'&&S.phase!=='onemore')return;
+  const my=seq;
+  autoFill();stopTimer();
+  const oneMore=S.phase==='onemore';S.phase='battle';render();
+  const combo=detectCombo(S.picked);
+  if(combo){await runCombo(combo,my);if(my!==seq)return;}
+  if(!oneMore){await cutIn("Let's Dance!",'',2.6);if(my!==seq)return;}
+  else await wait(BEAT*.5);
+  let wins=0,dead=false;
+  for(let i=0;i<3;i++){
+    const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined);
+    /* Last Attack: this hit would finish the CPU */
+    const lethal=r.dmgCpu>0&&r.dmgCpu>=S.cpu,slow=lethal?3:1;
+    if(lethal){
+      log('次の一撃で相手のHPが0に。Last Attack!!!','gold');
+      await cutIn('Last Attack!!!','last',4,'とどめの一撃');if(my!==seq)return;
+      setSlowmo(true);$('l'+i).classList.add('focus');await wait(BEAT*.6);if(my!==seq)return;
+    }
+    /* beat 1: the two cards move in */
+    S.clash=i;render();
+    await wait(BEAT*.7*slow);if(my!==seq)return;
+    /* impact: show verdict, then the number flies to the target's HP */
+    S.results[i]=r;S.clash=-1;
+    if(oneMore||lethal){sfx('slash');slashFx(i);quake(lethal?10:6);}
+    if(r.win)wins++;
+    spark(i,oneMore||lethal);render();
+    if(r.dmgCpu){
+      const tier=dmgTier(r.dmgCpu);
+      await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal});if(my!==seq)return;
+      S.cpu=Math.max(0,S.cpu-r.dmgCpu);
+      while(S.cpu>0&&S.cpu<=S.nextHpTrigger&&S.nextHpTrigger>0){if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${S.nextHpTrigger} を割った。次のラウンドで敵のスキルが発動`,'bad');}S.nextHpTrigger-=SKILL_HP_STEP;}
+      fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
+      if(lethal){flash('big');quake(16);}
+      else if(tier>=4){flash('red');quake(12);}
+      else if(tier>=3){flash('mid');quake(9);}
+      else if(tier>=2)quake(6);
+      render();
+    }
+    if(r.dmgMe){
+      const tier=dmgTier(r.dmgMe);
+      await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true});if(my!==seq)return;
+      S.me=Math.max(0,S.me-r.dmgMe);fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
+      render();
+    }
+    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');render();}
+    if(lethal){await wait(BEAT*1.6);$('l'+i).classList.remove('focus');setSlowmo(false);}
+    const who=c?`${cardName(p)}(${r.pv}) vs ${cardName(c)}(${r.cv})`:`${cardName(p)}(${r.pv})`;
+    const tag=r.mul?' ['+r.mul+']':'';
+    if(r.dmgCpu)log(`${i+1}枚目 ${who} → CPUに ${r.dmgCpu} ダメージ${tag}`,'good');
+    else if(r.dmgMe)log(`${i+1}枚目 ${who} → あなたに ${r.dmgMe} ダメージ${tag}`,'bad');
+    else log(`${i+1}枚目 ${who} → 引き分け`);
+    if(r.heal)log(`　♥ HPが ${r.heal} 回復 (${S.me})`,'gold');
+    await wait(BEAT*1.3);if(my!==seq)return;
+    if(S.me<=0||S.cpu<=0){dead=true;break;}
+  }
+  const played=S.picked.slice();
+  for(const p of S.picked){S.hand.splice(S.hand.indexOf(p),1);S.discard.push(p);}
+  S.picked=[];
+  if(dead){gameOver();return;}
+  const suitsDiffer=new Set(played.map(c=>c.suit)).size===3;
+  if(!oneMore&&wins===3&&!suitsDiffer)log('3枚すべてに勝利。ただし同じスートが含まれるので1moreは発生しない');
+  if(!oneMore&&wins===3&&suitsDiffer){
+    log('3枚すべてに勝利! 1more 発動。好きな3枚を追加で出せます','gold');
+    /* the CPU's cards blow away before the 1more cut-in (unless Revolution already did it) */
+    if(!S.revolution){S.results=[null,null,null];S.blown=true;render();await wait(BEAT*2);if(my!==seq)return;S.blown=false;}
+    S.phase='onemore';S.onemore=true;S.results=[null,null,null];
+    render();
+    sfx('onemore');omfxShow();
+    await cutIn('1 More!','',2.6);if(my!==seq)return;
+    startTimer(S.limit);render();return;
+  }
+  if(oneMore)omfxHide();
+  await wait(BEAT);if(my!==seq)return;
+  await endEnemySkillIfDue(my);if(my!==seq)return;
+  refill();
+  startRound();
+}
+async function gameOver(){
+  const my=seq;
+  S.phase='over';stopTimer();omfxHide();stopBgm();render();
+  const win=S.cpu<=0;
+  log(win?'勝利!':'敗北…','r');
+  await wait(BEAT*.6);if(my!==seq)return;
+  if(win)playFanfare();
+  await cutIn(win?'Win!':'Defeat...',win?'':'bad',3);if(my!==seq)return;
+  $('overTitle').textContent=win?'YOU WIN':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
+  $('overText').textContent=win?`ラウンド ${S.round} でCPUを倒しました。残りHP ${S.me}`:`ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
+  $('over').classList.add('show');
+}
+
+function toggle(c){
+  if(S.phase!=='select'&&S.phase!=='onemore')return;
+  const k=S.picked.indexOf(c);
+  if(k>=0)S.picked.splice(k,1);else if(S.picked.length<3){S.picked.push(c);sfx('place');}
+  ensureBgm();render();
+}
