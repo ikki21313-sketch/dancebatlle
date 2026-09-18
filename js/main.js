@@ -14,6 +14,8 @@ $('rulesBtn').addEventListener('click',()=>$('rules').showModal());
 function start(data){
   if(data&&data.S&&data.S.phase!=='over'&&data.S.phase!=='intro'){
     S=data.S;uid=data.uid||uid;S.clash=-1;if(S.stage==null)S.stage=0;if(S.cpuMax==null)S.cpuMax=MAX_CPU;
+    RUN=data.RUN||null;if(!RUN)newRun();
+    if(S.score==null){S.score=0;S.scoreLog=[];S.kills=0;S.streak=0;S.tookDamage=false;S.timeUsed=0;S.roundDmg=0;S.chainReady=false;}
     $('log').innerHTML='';
     bgmWanted=true;
     if(S.phase==='onemore')omfxShow();
@@ -27,5 +29,5 @@ function start(data){
     else{S.picked=[];S.results=[null,null,null];S.onemore=false;S.handMax=S.handMax||HAND;refill();startRound();}
   }else{freshState();render();$('startOver').classList.add('show');}
 }
-window.claude?.hot?.snapshot?.(()=>({S,uid,pausedLeft}));
+window.claude?.hot?.snapshot?.(()=>({S,RUN,uid,pausedLeft}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

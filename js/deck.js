@@ -1,6 +1,6 @@
 // カード・山札・手札のルール(コンボ判定, CPUの場, 相性の解決)
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function newDeck(){const d=[];for(const s of DECK_SUITS)for(let r=MIN_RANK;r<=MAX_RANK;r++)d.push({id:++uid,suit:s,rank:r});return shuffle(d);}
+function newDeck(){const counts=(typeof RUN!=='undefined'&&RUN)?RUN.deck:baseDeckCounts();const d=[];for(const k in counts){const suit=k[0],rank=+k.slice(1);for(let i=0;i<counts[k];i++)d.push({id:++uid,suit,rank});}return shuffle(d);}
 function drawOne(){if(!S.deck.length){if(!S.discard.length)return null;S.deck=shuffle(S.discard);S.discard=[];}return S.deck.pop();}
 function refill(){while(S.hand.length<S.handMax){const c=drawOne();if(!c)break;S.hand.push(c);}sortHand();}
 /* combos: what do the 3 played cards form? */
@@ -21,10 +21,14 @@ function sortHand(){S.hand.sort((a,b)=>SUIT_ORDER[a.suit]-SUIT_ORDER[b.suit]||b.
 function resolve(p,c,label){
   const pt=SUITS[p.suit].type,heal=pt==='heal'?p.rank:0;
   let pv=pt==='heal'?0:p.rank,cv=c?c.rank:0,mul='';
+  const sk=(typeof RUN!=='undefined'&&RUN)?RUN.skills:{};
+  let m=1;
   if(c){const ct=SUITS[c.suit].type;
-    if(BEATS[pt]===ct){pv*=2;mul='相性 ×2';}
+    if(BEATS[pt]===ct){m=sk.adv4x?4:2;mul='相性 ×'+m;}
     else if(BEATS[ct]===pt){cv*=2;mul='相性負け';}
   }else{mul=label||'1more';}
+  if(sk.low2x&&p.rank<=6&&m<2){m=2;mul=(mul?mul+' ':'')+'6以下×2';}
+  pv*=m;
   const diff=pv-cv;
   return {pv,cv,heal,mul,dmgCpu:diff>0?diff:0,dmgMe:diff<0?-diff:0,win:pv>cv};
 }

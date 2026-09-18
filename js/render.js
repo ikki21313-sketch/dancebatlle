@@ -31,7 +31,7 @@ function backEl(){const d=document.createElement('div');d.className='card back';
 function render(){
   const sel=S.phase==='select'||S.phase==='onemore';
   const cpuMax=S.cpuMax||MAX_CPU;
-  $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;
+  $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
   $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${MAX_ME}</small>`;
   const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/MAX_ME*100)+'%';
   cb.classList.toggle('low',S.cpu<=cpuMax*.3);mb.classList.toggle('low',S.me<=MAX_ME*.3);

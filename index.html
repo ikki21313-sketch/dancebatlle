@@ -11,6 +11,7 @@
   <header class="top">
     <h1>SUIT BATTLE</h1>
     <span class="stage" id="stageLbl">STAGE 1 / 3</span>
+    <span class="score" id="scoreLbl">SCORE 0</span>
     <span class="sub">スートバトル ・ じゃんけん相性つきトランプバトル(モック)</span>
     <span class="spacer"></span>
     <button class="btn" id="muteBtn" type="button">🔊 音あり</button>
@@ -81,12 +82,29 @@
   </div>
 </div>
 
+<div class="toasts" id="toasts"></div>
+
 <div class="over" id="buildOver">
   <div class="box build">
     <div class="eyebrow" id="buildEyebrow">STAGE 1 CLEAR</div>
     <div class="big win">DECK BUILD</div>
-    <p>ここにデッキビルドが入ります(内容は検討中)</p>
-    <div class="placeholder">デッキ編集エリア</div>
+    <div class="points">所持ポイント <b id="buildPoints">0</b> pt</div>
+    <div class="build-cols">
+      <section class="bsec">
+        <h3>ステージのスコア</h3>
+        <ul class="score-list" id="buildScore"></ul>
+      </section>
+      <section class="bsec">
+        <h3>スキル(ステージをまたいで持ち越す)</h3>
+        <ul class="skill-list" id="skillList"></ul>
+      </section>
+    </div>
+    <section class="bsec">
+      <h3>デッキ <span class="hint-s">「−」で1枚減らす、「+」で1枚追加。下段は追加 / 減少に必要なポイント(k=1000)</span></h3>
+      <div class="deck-grid" id="deckGrid"></div>
+      <div class="deck-total" id="deckTotal"></div>
+    </section>
+    <div class="build-note" id="buildNote"></div>
     <button class="btn primary" id="buildNextBtn" type="button">次へ進む</button>
   </div>
 </div>
@@ -113,6 +131,7 @@
     <li>相性が有利(グー&gt;チョキ&gt;パー&gt;グー)なら自分の数字を2倍で計算</li>
     <li>3枚すべてに勝ち、かつ出した3枚がすべて違うスートなら <b>1more</b>。好きな3枚を追加で出し、数字がそのままダメージ</li>
     <li>ラウンド後、手札が上限(はじめ6枚)になるまで補充。先にHP0になった方の負け</li>
+    <li>撃破・3枚全勝・1more・コンボ・Skill Break・ノーダメージ・1ターンの大ダメージ・クリア時間でスコアが入り、ステージ間のデッキビルドでカードの増減やスキルに使える</li>
   </ul>
   <h2 style="font-size:15px">敵のスキル</h2>
   <ul>
@@ -137,4 +156,5 @@
 <script src="js/fx.js"></script>
 <script src="js/render.js"></script>
 <script src="js/game.js"></script>
+<script src="js/build.js"></script>
 <script src="js/main.js"></script>
