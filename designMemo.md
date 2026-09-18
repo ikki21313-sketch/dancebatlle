@@ -110,7 +110,7 @@ Let's Dance! カットイン
 )
 ]
 []を繰り返す
-相手の体力がなくなったら Win! カットイン → 結果画面
+相手の体力がなくなったら Win! カットイン → 結果画面。Win! カットインと同時に通常BGMを止めて 栄光のファンファーレ.mp3 を再生(「もう一度」で停止)
 自分の体力がなくなったら Defeat... カットイン → 結果画面
 「もう一度」で最初から
 
@@ -150,4 +150,5 @@ music/カードをめくる.mp3        CPUの配札音(参照用コピー: music
 music/カードを台の上に出す.mp3  手札選択音(参照用コピー: music/card_place.mp3)
 music/1more.mp3           1moreカットイン音(Revolutionのカットインでも使用)
 music/剣で斬る3.mp3        1moreバトルの斬撃音(参照用コピー: music/slash.mp3。Sword Comboのカットインでも使用)
+music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: music/fanfare.mp3)
 ※ mock.html からは ASCII 名のコピーを参照している

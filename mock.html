@@ -414,6 +414,7 @@ let S=null,timerId=null,uid=0,seq=0;
 
 /* ---- audio ---- */
 const bgm=new Audio('music/Groovy_Ignition.mp3');bgm.loop=true;bgm.volume=.45;bgm.preload='auto';
+const fanfare=new Audio('music/fanfare.mp3');fanfare.volume=.6;fanfare.preload='auto';
 const SFX={flip:'music/card_flip.mp3',place:'music/card_place.mp3',onemore:'music/1more.mp3',slash:'music/slash.mp3'};
 const sfxPool={};for(const k in SFX){const a=new Audio(SFX[k]);a.preload='auto';sfxPool[k]=a;}
 let muted=false,bgmWanted=false;
@@ -422,7 +423,9 @@ function sfx(k){if(muted)return;const a=sfxPool[k].cloneNode();a.volume=(k==='on
 function playBgm(){bgmWanted=true;bgm.muted=muted;bgm.currentTime=0;bgm.play().catch(()=>{});}
 function ensureBgm(){if(bgmWanted&&bgm.paused)bgm.play().catch(()=>{});}
 function stopBgm(){bgmWanted=false;bgm.pause();}
-function setMuted(m){muted=m;bgm.muted=m;try{localStorage.setItem('sb-muted',m?'1':'0');}catch(e){}$('muteBtn').textContent=m?'🔇 音なし':'🔊 音あり';if(!m)ensureBgm();}
+function playFanfare(){fanfare.muted=muted;fanfare.currentTime=0;fanfare.play().catch(()=>{});}
+function stopFanfare(){fanfare.pause();}
+function setMuted(m){muted=m;bgm.muted=m;fanfare.muted=m;try{localStorage.setItem('sb-muted',m?'1':'0');}catch(e){}$('muteBtn').textContent=m?'🔇 音なし':'🔊 音あり';if(!m)ensureBgm();}
 
 /* ---- 1more tapes ---- */
 (function buildTapes(){
@@ -537,7 +540,7 @@ function freshState(){
 }
 async function newGame(){
   const my=++seq;
-  stopTimer();omfxHide();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
+  stopTimer();omfxHide();stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
   $('log').innerHTML='';$('over').classList.remove('show');
   render();
   await cutIn('Get Ready?','alt');
@@ -682,6 +685,7 @@ async function gameOver(){
   const win=S.cpu<=0;
   log(win?'勝利!':'敗北…','r');
   await wait(BEAT*.6);if(my!==seq)return;
+  if(win)playFanfare();
   await cutIn(win?'Win!':'Defeat...',win?'':'bad',3);if(my!==seq)return;
   $('overTitle').textContent=win?'YOU WIN':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
   $('overText').textContent=win?`ラウンド ${S.round} でCPUを倒しました。残りHP ${S.me}`:`ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
