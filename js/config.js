@@ -18,7 +18,7 @@ const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
 const STAGES=[
   {name:'STAGE 1',enemy:'イッチメーン',cpu:150,bgm:'music/Groovy_Ignition.mp3',
    ranges:[{until:4,min:3,max:6},{until:6,min:3,max:8},{until:Infinity,min:7,max:11}],
-   skill:{cd:4,hp:[150,100],len:1,
+   skill:{cd:4,hp:[100,50],len:1,
      cards:(level,turn)=>{const r=level===1?13:14;return ['D','C','S'].map(suit=>({suit,rank:r}));},
      desc:level=>`相手の場が ♦♣♠ の ${level===1?13:14} になる(1ラウンド)`}},
   {name:'STAGE 2',enemy:'ニーメン',cpu:200,bgm:'music/stage2.mp3',
