@@ -1,17 +1,19 @@
 // 起動: ボタンの配線とホットリロード
 $('goBtn').addEventListener('click',()=>{ensureBgm();commit();});
-$('startBtn').addEventListener('click',()=>{$('startOver').classList.remove('show');newGame();});
+$('startBtn').addEventListener('click',()=>{$('startOver').classList.remove('show');newGame(0);});
+$('buildNextBtn').addEventListener('click',()=>{$('buildOver').classList.remove('show');newGame((S.stage||0)+1);});
+$('retryBtn').addEventListener('click',()=>newGame(S.stage||0));
 $('muteBtn').addEventListener('click',()=>setMuted(!muted));
 $('pauseBtn').addEventListener('click',pauseTimer);
 setMuted(muted);
 $('clearBtn').addEventListener('click',()=>{S.picked=[];render();});
-$('againBtn').addEventListener('click',newGame);
+$('againBtn').addEventListener('click',()=>newGame(0));
 $('rulesBtn').addEventListener('click',()=>$('rules').showModal());
 
 /* hot reload: keep the game across republishes */
 function start(data){
   if(data&&data.S&&data.S.phase!=='over'&&data.S.phase!=='intro'){
-    S=data.S;uid=data.uid||uid;S.clash=-1;
+    S=data.S;uid=data.uid||uid;S.clash=-1;if(S.stage==null)S.stage=0;if(S.cpuMax==null)S.cpuMax=MAX_CPU;
     $('log').innerHTML='';
     bgmWanted=true;
     if(S.phase==='onemore')omfxShow();

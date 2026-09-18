@@ -83,15 +83,20 @@ async function endEnemySkillIfDue(my){
 }
 
 /* ---- game flow ---- */
-function freshState(){
-  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:MAX_CPU-SKILL_HP_STEP};
+function freshState(stage=0){
+  const cpuMax=STAGES[stage].cpu;
+  S={stage,cpuMax,me:MAX_ME,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:cpuMax-SKILL_HP_STEP};
   refill();
 }
-async function newGame(){
+/* a stage = one full battle. stages run 1 → build screen → 2 → build screen → 3 → all clear */
+async function newGame(stage=0){
   const my=++seq;
-  stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
-  $('log').innerHTML='';$('over').classList.remove('show');
+  stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState(stage);
+  $('log').innerHTML='';$('over').classList.remove('show');$('buildOver').classList.remove('show');
+  log(`${STAGES[stage].name} 開始 (CPU HP ${S.cpuMax})`,'r');
   render();
+  await cutIn(STAGES[stage].name,'alt',3,`${stage+1} / ${STAGES.length}`);
+  if(my!==seq)return;
   await cutIn('Get Ready?','alt');
   if(my!==seq)return;
   await cutIn('Go!');
@@ -224,13 +229,19 @@ async function commit(){
 async function gameOver(){
   const my=seq;
   S.phase='over';stopTimer();omfxHide();stopBgm();render();
-  const win=S.cpu<=0;
-  log(win?'勝利!':'敗北…','r');
+  const win=S.cpu<=0,last=S.stage>=STAGES.length-1,name=STAGES[S.stage].name;
+  log(win?(last?'全ステージクリア!':`${name} クリア!`):'敗北…','r');
   await wait(BEAT*.6);if(my!==seq)return;
   if(win)playFanfare();
-  await cutIn(win?'Win!':'Defeat...',win?'':'bad',3);if(my!==seq)return;
-  $('overTitle').textContent=win?'YOU WIN':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
-  $('overText').textContent=win?`ラウンド ${S.round} でCPUを倒しました。残りHP ${S.me}`:`ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
+  await cutIn(win?(last?'All Clear!':`Stage ${S.stage+1} Clear!`):'Defeat...',win?'':'bad',3);if(my!==seq)return;
+  if(win&&!last){
+    /* between stages: the deck-build screen (placeholder for now) */
+    $('buildEyebrow').textContent=`${name} CLEAR ・ ラウンド ${S.round} ・ 残りHP ${S.me}`;
+    $('buildOver').classList.add('show');return;
+  }
+  $('overTitle').textContent=win?'ALL CLEAR':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
+  $('overText').textContent=win?`${STAGES.length}ステージすべてクリア! 最終ステージはラウンド ${S.round}、残りHP ${S.me}`:`${name} ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
+  $('retryBtn').hidden=win;
   $('over').classList.add('show');
 }
 

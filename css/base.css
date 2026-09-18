@@ -118,4 +118,9 @@ dialog li{margin:3px 0}
 .timer .lim.hot{color:#ff9a4a}
 
 .over .big.title{font-size:44px;letter-spacing:.06em}
+.top .stage{font-family:var(--num);font-weight:700;font-size:13px;letter-spacing:.16em;color:var(--gold-ink);background:var(--gold);padding:2px 10px;border-radius:12px}
+.over .eyebrow{font-family:var(--num);font-weight:700;font-size:13px;letter-spacing:.2em;color:var(--muted);margin-bottom:8px}
+.over .box.build{max-width:520px}
+.over .placeholder{border:2px dashed var(--felt-line);border-radius:8px;padding:34px 16px;color:var(--dim);font-size:13px;margin:0 0 18px}
+.over .actions.center{justify-content:center}
 .over .note{font-size:12px;color:var(--dim);margin:12px 0 0}

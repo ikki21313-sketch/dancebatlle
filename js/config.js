@@ -11,6 +11,8 @@ const rankLabel=r=>r<=13?RANKS[r-1]:String(r);
 /* enemy skill: fires after SKILL_CD normal rounds or when CPU HP crosses a SKILL_HP_STEP boundary; lasts SKILL_LEN rounds */
 const SKILL_CD=5,SKILL_LEN=2,SKILL_HP_STEP=50,SKILL_BASE_RANK=13;
 const MAX_ME=30,MAX_CPU=200,HAND=6,BEAT=450;
+/* stages: cleared in order, with a deck-build screen between them. cpu = that stage's CPU HP */
+const STAGES=[{name:'STAGE 1',cpu:200},{name:'STAGE 2',cpu:200},{name:'STAGE 3',cpu:200}];
 /* battle cadence per card, in beats (clash → number pops → flies → hold). Fixed so 1,2,3 land on a steady rhythm.
    normal: 2.0 beats per card. onemore: 1.65 beats (a touch quicker). Last Attack multiplies everything by 3. */
 const TEMPO={normal:{clash:.55,pop:.45,fly:.35,hold:.65},onemore:{clash:.45,pop:.4,fly:.3,hold:.5}};

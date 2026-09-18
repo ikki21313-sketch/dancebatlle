@@ -10,6 +10,7 @@
 <div class="app">
   <header class="top">
     <h1>SUIT BATTLE</h1>
+    <span class="stage" id="stageLbl">STAGE 1 / 3</span>
     <span class="sub">スートバトル ・ じゃんけん相性つきトランプバトル(モック)</span>
     <span class="spacer"></span>
     <button class="btn" id="muteBtn" type="button">🔊 音あり</button>
@@ -80,11 +81,24 @@
   </div>
 </div>
 
+<div class="over" id="buildOver">
+  <div class="box build">
+    <div class="eyebrow" id="buildEyebrow">STAGE 1 CLEAR</div>
+    <div class="big win">DECK BUILD</div>
+    <p>ここにデッキビルドが入ります(内容は検討中)</p>
+    <div class="placeholder">デッキ編集エリア</div>
+    <button class="btn primary" id="buildNextBtn" type="button">次へ進む</button>
+  </div>
+</div>
+
 <div class="over" id="over">
   <div class="box">
     <div class="big" id="overTitle">WIN</div>
     <p id="overText"></p>
-    <button class="btn primary" id="againBtn" type="button">もう一度</button>
+    <div class="actions center">
+      <button class="btn" id="retryBtn" type="button">このステージから</button>
+      <button class="btn primary" id="againBtn" type="button">最初から</button>
+    </div>
   </div>
 </div>
 
