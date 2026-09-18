@@ -254,6 +254,12 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 .cutin.enemy .band::before,.cutin.enemy .band::after{background:repeating-linear-gradient(-45deg,#111 0 12px,#ff4a3a 12px 24px);opacity:.8;height:8px}
 .cutin.enemy .txt{color:#fff;text-shadow:0 0 14px #ff2a1a,0 0 36px #ff2a1a}
 .cutin.enemy .sub{color:#ffd0cb}
+.cutin.heat .band{background:#ff7a1a;border-top:4px solid #ffd166;border-bottom:4px solid #ffd166}
+.cutin.heat .band::before,.cutin.heat .band::after{background:repeating-linear-gradient(-45deg,#3a1200 0 12px,#ff7a1a 12px 24px);opacity:.7;height:8px}
+.cutin.heat .txt{color:#fff;text-shadow:0 0 14px #ff3b2f,0 0 40px #ff7a1a}
+.cutin.heat .sub{color:#fff3d6}
+.timer .lim{font-family:var(--num);font-size:12px;letter-spacing:.1em;color:var(--dim);margin-left:8px}
+.timer .lim.hot{color:#ff9a4a}
 .cutin.break .band{background:var(--gold)}
 .cutin.break .txt{color:var(--gold-ink)}
 /* enemy skill: DANGER tapes (same mechanics as the 1more tapes, red/black) */
@@ -340,7 +346,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 
   <section class="control">
     <div class="timer">
-      <div class="row"><span class="hint" id="hint">準備中…</span><span class="sec" id="sec">--</span></div>
+      <div class="row"><span class="hint" id="hint">準備中…</span><span><span class="lim" id="lim">制限 30秒</span> <span class="sec" id="sec">--</span></span></div>
       <div class="tbar"><i id="tbar" style="width:0%"></i></div>
     </div>
     <div class="actions">
@@ -396,7 +402,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
     <li>♦ダイヤ=グー、♠スペード=チョキ、♣クローバー=パー(♥ハートの回復は一旦なし)</li>
     <li>使うのは各スートの3〜Kの33枚(A・2は一旦なし)。あなたHP30、CPU HP200。手札は6枚、CPUは3枚を先に出す</li>
     <li>CPUは4ラウンド目までは10以下のカードしか出さない。5ラウンド目からはKまで出す</li>
-    <li>それを見て手札から3枚を順に選ぶ。制限時間10秒(足りない分は自動で補充)</li>
+    <li>それを見て手札から3枚を順に選ぶ。制限時間は30秒から始まり、2ラウンドごとの Heat Up! で5秒ずつ短くなる(下限5秒)。時間切れは足りない分を自動で補充</li>
     <li>1枚目・2枚目・3枚目の順に比較。数字が大きい方が差分ぶんダメージ</li>
     <li>相性が有利(グー&gt;チョキ&gt;パー&gt;グー)なら自分の数字を2倍で計算</li>
     <li>3枚すべてに勝ち、かつ出した3枚がすべて違うスートなら <b>1more</b>。好きな3枚を追加で出し、数字がそのままダメージ</li>
@@ -431,7 +437,9 @@ const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const rankLabel=r=>r<=13?RANKS[r-1]:String(r);
 /* enemy skill: fires after SKILL_CD normal rounds or when CPU HP crosses a SKILL_HP_STEP boundary; lasts SKILL_LEN rounds */
 const SKILL_CD=5,SKILL_LEN=2,SKILL_HP_STEP=50,SKILL_BASE_RANK=13;
-const MAX_ME=30,MAX_CPU=200,HAND=6,LIMIT=10000,BEAT=450;
+const MAX_ME=30,MAX_CPU=200,HAND=6,BEAT=450;
+/* selection time limit: starts at LIMIT_START, drops LIMIT_STEP every HEAT_EVERY rounds (Heat Up!), never below LIMIT_MIN */
+const LIMIT_START=30000,LIMIT_STEP=5000,LIMIT_MIN=5000,HEAT_EVERY=2;
 /* deck config: hearts, A and 2 are removed for now */
 const DECK_SUITS='DSC',MIN_RANK=3,MAX_RANK=13;
 /* CPU plays at most this rank during the first EARLY_ROUNDS rounds */
@@ -584,7 +592,7 @@ function cutIn(text,style='',beats=2.4,sub=''){
 
 /* ---- game flow ---- */
 function freshState(){
-  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:MAX_CPU-SKILL_HP_STEP};
+  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:MAX_CPU-SKILL_HP_STEP};
   refill();
 }
 async function newGame(){
@@ -604,6 +612,11 @@ async function startRound(){
   S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;S.cpuField=[];
   log(`ラウンド ${S.round}`,'r');
   render();
+  if(S.round>1&&(S.round-1)%HEAT_EVERY===0&&S.limit>LIMIT_MIN){
+    const before=S.limit;S.limit=Math.max(LIMIT_MIN,S.limit-LIMIT_STEP);
+    log(`Heat Up! 制限時間が ${before/1000}秒 → ${S.limit/1000}秒`,'bad');render();
+    await cutIn('Heat Up!','heat',4,`制限時間 ${before/1000}秒 → ${S.limit/1000}秒`);if(my!==seq)return;
+  }
   await maybeEnemySkill(my);if(my!==seq)return;
   S.cpuField=S.skillActive?skillDeal():cpuDeal();
   log(`　CPUの場: ${S.cpuField.map(cardName).join('  ')}${S.skillActive?'  [敵スキル 残り'+S.skillRounds+'ラウンド]':''}`);
@@ -612,7 +625,7 @@ async function startRound(){
   for(let i=0;i<3;i++){S.dealt=i+1;sfx('flip');render();await wait(BEAT);if(my!==seq)return;}
   await cutIn('Setup!','alt',2);
   if(my!==seq)return;
-  S.phase='select';startTimer(LIMIT);render();
+  S.phase='select';startTimer(S.limit);render();
 }
 
 /* timer */
@@ -638,7 +651,7 @@ function renderPause(){
 function renderTimer(left){
   const s=(left/1000).toFixed(1),urg=left<3000;
   $('sec').textContent=s;$('sec').classList.toggle('urgent',urg);
-  const b=$('tbar');b.style.width=(left/LIMIT*100)+'%';b.classList.toggle('urgent',urg);
+  const b=$('tbar');b.style.width=(left/S.limit*100)+'%';b.classList.toggle('urgent',urg);
 }
 function autoFill(){
   if(S.picked.length>=3)return;
@@ -726,7 +739,7 @@ async function commit(){
     render();
     sfx('onemore');omfxShow();
     await cutIn('1 More!','',2.6);if(my!==seq)return;
-    startTimer(LIMIT);render();return;
+    startTimer(S.limit);render();return;
   }
   if(oneMore)omfxHide();
   await wait(BEAT);if(my!==seq)return;
@@ -877,6 +890,7 @@ function render(){
   $('deckCnt').innerHTML=`山札 ${S.deck.length} ・ 手札 ${S.hand.length}/${S.handMax}${S.handMax>HAND?' <b>上限+'+(S.handMax-HAND)+'</b>':''}`;
   $('goBtn').disabled=!(sel&&S.picked.length===3);$('clearBtn').disabled=!sel||!S.picked.length;
   $('pauseBtn').disabled=!sel;renderPause();
+  $('lim').textContent=`制限 ${S.limit/1000}秒`;$('lim').classList.toggle('hot',S.limit<=10000);
   const hints={intro:'準備中…',deal:'CPUがカードを出しています…',select:S.picked.length<3?`手札から3枚を順番に選ぶ (${S.picked.length}/3) ・ 光る枠は${S.picked.length+1}枚目に有利 ・ ▼は不利(相手が2倍)`:(detectCombo(S.picked)?`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`:'3枚選択済み。決定を押してください'),combo:'コンボ発動!',onemore:'1more! 好きな3枚を選ぶ(数字がそのままダメージ)',battle:'バトル中…',over:'決着'};
   if(S.phase==='onemore'&&S.picked.length===3&&detectCombo(S.picked))hints.onemore=`コンボ成立: ${COMBO_NAME[detectCombo(S.picked)]} 決定で発動`;
   $('hint').textContent=hints[S.phase]||'';
@@ -906,6 +920,7 @@ function start(data){
     bgmWanted=true;
     if(S.phase==='onemore')omfxShow();
     if(S.skillActive)omfxShow('dgfx');
+    if(S.limit==null)S.limit=LIMIT_START;
     if(S.skillCd==null){S.skillActive=false;S.skillRounds=0;S.skillLevel=0;S.skillCd=SKILL_CD;S.hpTrigger=false;S.nextHpTrigger=MAX_CPU-SKILL_HP_STEP;}
     if(S.phase==='select'||S.phase==='onemore'){
       if(data.pausedLeft!=null){pausedLeft=data.pausedLeft;renderTimer(pausedLeft);render();}
