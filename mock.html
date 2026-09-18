@@ -234,7 +234,7 @@ dialog li{margin:3px 0}
 .dmgfly.me{--glow:var(--bad);color:#ffd9d3}
 @keyframes dmgFlicker{0%{filter:brightness(1)}100%{filter:brightness(1.6) saturate(1.4)}}
 .burst{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 12px var(--gold);will-change:transform}
-.ring{position:absolute;width:20px;height:20px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 24px var(--gold);will-change:transform}
+.shock{position:absolute;width:20px;height:20px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 24px var(--gold);will-change:transform}
 .fighter.hitbig{animation:shakeBig .6s}
 @keyframes shakeBig{10%{transform:translate(-10px,3px)}25%{transform:translate(9px,-4px)}40%{transform:translate(-7px,2px)}55%{transform:translate(6px,-2px)}70%{transform:translate(-4px,1px)}85%{transform:translate(2px,0)}}
 .field.quake{--q:6px}
@@ -705,7 +705,7 @@ function burst(x,y,count,dist,ms,ring){
   for(let i=0;i<count;i++){const b=document.createElement('span');b.className='burst';b.style.left=x+'px';b.style.top=y+'px';layer.appendChild(b);
     const a=(i/count)*Math.PI*2+Math.random()*.5,d=dist*(.6+Math.random()*.6);
     b.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(calc(${Math.cos(a)*d}px - 50%),calc(${Math.sin(a)*d}px - 50%)) scale(.2)`,opacity:0}],{duration:ms,easing:'cubic-bezier(.1,.8,.3,1)',fill:'forwards'});setTimeout(()=>b.remove(),ms+50);}
-  if(ring){const r=document.createElement('span');r.className='ring';r.style.left=x+'px';r.style.top=y+'px';layer.appendChild(r);
+  if(ring){const r=document.createElement('span');r.className='shock';r.style.left=x+'px';r.style.top=y+'px';layer.appendChild(r);
     r.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},{transform:`translate(-50%,-50%) scale(${ring})`,opacity:0}],{duration:ms*1.2,easing:'ease-out',fill:'forwards'});setTimeout(()=>r.remove(),ms*1.2+50);}
 }
 /* a damage number pops at `fromEl`, hangs a beat, then flies into `toEl` (the target's HP) */
