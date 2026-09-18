@@ -39,7 +39,7 @@ const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDama
 const DECK_MIN=20,DECK_MAX_COPIES=6;
 /* points refunded when a card is removed (DeckBuild.md; 10 is read as 1000 from the 100×rank pattern) */
 const REMOVE_REFUND={1:100,2:200,3:300,4:400,5:500,6:600,7:700,8:800,9:900,10:1000,11:11000,12:12000,13:20000};
-const ADD_COST={1:100,2:2000,3:3000,4:4000,5:5000,6:6000,7:7000,8:8000,9:9000,10:10000,11:11000,12:12000,13:20000};
+const ADD_COST={1:5000,2:2000,3:3000,4:4000,5:5000,6:6000,7:7000,8:8000,9:9000,10:10000,11:11000,12:12000,13:20000};
 const SKILLS={
   low2x:{name:'6以下のカードが常に2倍',desc:'6以下のカードは相性に関係なくパワー2倍(有利でも2倍)',cost:30000},
   adv4x:{name:'相性有利で4倍',desc:'相性が有利なカードのパワーが2倍ではなく4倍になる',cost:20000},
@@ -48,7 +48,7 @@ const SKILLS={
   tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:50000},
   triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
   royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+100',cost:10000},
-  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:10000}
+  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:20000}
 };
 /* skill patterns on the 3 played cards (normal battle and 1more alike) */
 function skillPatterns(cards,inOneMore,hand){
