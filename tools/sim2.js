@@ -9,6 +9,8 @@ const N = Number(args.find(a => /^\d+$/.test(a)) || 200);
 const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
 const ONLY = opt('only'), POLICY = opt('policy') || 'all', STAGE_COUNT = Number(opt('stages') || 5), MISTAKE = Number(opt('mistake') || 0.25);
 const SHIFT = Number(opt('shift') || 0);   // 調整実験用: 敵の出す数字の範囲を一律に +n (上限13)
+const S4P = Number(opt('s4') || 20), S5P = Number(opt('s5') || 25);   // 仮ステージのスキル威力(1回目。2回目は+2)
+const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル持続ラウンド +n
 
 let seed = 12345; const rng = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const rnd = n => Math.floor(rng() * n), pick = a => a[rnd(a.length)];
@@ -21,9 +23,9 @@ const STAGES = [
   { name: 'S2 ニーメン', cpu: 200, ranges: [[4, 5, 7], [6, 5, 9], [99, 7, 11]], skill: { cd: 4, hp: [150, 100, 50], len: 3, cards: (lv, turn) => { const suit = ['D', 'C', 'S'][turn - 1], r = lv === 1 ? 13 : 15; return [0, 1, 2].map(() => ({ suit, rank: r })); } } },
   { name: 'S3 ラストリオン', cpu: 300, ranges: [[4, 7, 10], [6, 7, 12], [99, 10, 13]], skill: { cd: 3, hp: [200, 100], len: 1, cards: (lv) => { const r = lv === 1 ? 13 : 15, w = lv === 1 ? 11 : 12, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
   // ---- 仮置き(未定義) ----
-  { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? 20 : 22; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
-  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 2, cards: (lv) => { const r = lv === 1 ? 25 : 27, w = lv === 1 ? 20 : 22, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
-].slice(0, STAGE_COUNT);
+  { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? S4P : S4P + 2; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
+  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 2, cards: (lv) => { const r = lv === 1 ? S5P : S5P + 2, w = S5P - 5 + (lv === 1 ? 0 : 2), wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
+].slice(0, STAGE_COUNT).map(s => ({ ...s, skill: { ...s.skill, len: s.skill.len + LEN_PLUS } }));
 
 function resolve(p, c, sk, mods = {}) {
   let pv = mods.base ?? p.rank, cv = c ? c.rank : 0, m = 1;
