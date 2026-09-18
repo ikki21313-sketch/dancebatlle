@@ -402,7 +402,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
     <li>♦ダイヤ=グー、♠スペード=チョキ、♣クローバー=パー(♥ハートの回復は一旦なし)</li>
     <li>使うのは各スートの3〜Kの33枚(A・2は一旦なし)。あなたHP30、CPU HP200。手札は6枚、CPUは3枚を先に出す</li>
     <li>CPUは4ラウンド目までは10以下のカードしか出さない。5ラウンド目からはKまで出す</li>
-    <li>それを見て手札から3枚を順に選ぶ。制限時間は30秒から始まり、2ラウンドごとの Heat Up! で5秒ずつ短くなる(下限5秒)。時間切れは足りない分を自動で補充</li>
+    <li>それを見て手札から3枚を順に選ぶ。制限時間は30秒から始まり、2ラウンドごとの Heat Up! で5秒ずつ短くなる(下限10秒)。時間切れは足りない分を自動で補充</li>
     <li>1枚目・2枚目・3枚目の順に比較。数字が大きい方が差分ぶんダメージ</li>
     <li>相性が有利(グー&gt;チョキ&gt;パー&gt;グー)なら自分の数字を2倍で計算</li>
     <li>3枚すべてに勝ち、かつ出した3枚がすべて違うスートなら <b>1more</b>。好きな3枚を追加で出し、数字がそのままダメージ</li>
@@ -439,7 +439,7 @@ const rankLabel=r=>r<=13?RANKS[r-1]:String(r);
 const SKILL_CD=5,SKILL_LEN=2,SKILL_HP_STEP=50,SKILL_BASE_RANK=13;
 const MAX_ME=30,MAX_CPU=200,HAND=6,BEAT=450;
 /* selection time limit: starts at LIMIT_START, drops LIMIT_STEP every HEAT_EVERY rounds (Heat Up!), never below LIMIT_MIN */
-const LIMIT_START=30000,LIMIT_STEP=5000,LIMIT_MIN=5000,HEAT_EVERY=2;
+const LIMIT_START=30000,LIMIT_STEP=5000,LIMIT_MIN=10000,HEAT_EVERY=2;
 /* deck config: hearts, A and 2 are removed for now */
 const DECK_SUITS='DSC',MIN_RANK=3,MAX_RANK=13;
 /* CPU plays at most this rank during the first EARLY_ROUNDS rounds */
