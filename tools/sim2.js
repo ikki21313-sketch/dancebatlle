@@ -2,15 +2,16 @@
 // 使い方: node tools/sim2.js [games per cell] [--stages 5] [--only 型名] [--policy optimal|mistake|all]
 // 現行ルール(ステージ設定・敵スキル・コンボ・スキル8種・1moreスキップ)を再現し、
 // ビルド型 × デッキの出来 × プレイングの質 ごとに、各ステージを「フルHPから単独で挑戦したときのクリア率」で出す。
-// ステージ4・5は未定義なので Stage.md の傾向から仮置き(S4スキル20/22、S5スキル25/27)。同じカードは3枚まで(DECK_MAX_COPIES=3)。
+// ステージ4・5は未定義なので Stage.md の傾向から仮置き(S4スキル18/20が2ラウンド、S5スキル22/24が3ラウンド)。同じカードは3枚まで(DECK_MAX_COPIES=3)。
 
 const args = process.argv.slice(2);
 const N = Number(args.find(a => /^\d+$/.test(a)) || 200);
 const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
 const ONLY = opt('only'), POLICY = opt('policy') || 'all', STAGE_COUNT = Number(opt('stages') || 5), MISTAKE = Number(opt('mistake') || 0.25);
 const SHIFT = Number(opt('shift') || 0);   // 調整実験用: 敵の出す数字の範囲を一律に +n (上限13)
-const S4P = Number(opt('s4') || 20), S5P = Number(opt('s5') || 25);   // 仮ステージのスキル威力(1回目。2回目は+2)
+const S4P = Number(opt('s4') || 18), S5P = Number(opt('s5') || 22);   // 仮ステージのスキル威力(1回目。2回目は+2)
 const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル持続ラウンド +n
+const HP_LV = Number(opt('hp') || 0);   // 全ビルドに「最大HP+10」を n 段階持たせる(デッキビルドで買える想定)
 
 let seed = 12345; const rng = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const rnd = n => Math.floor(rng() * n), pick = a => a[rnd(a.length)];
@@ -24,7 +25,7 @@ const STAGES = [
   { name: 'S3 ラストリオン', cpu: 300, ranges: [[4, 7, 10], [6, 7, 12], [99, 10, 13]], skill: { cd: 3, hp: [200, 100], len: 1, cards: (lv) => { const r = lv === 1 ? 13 : 15, w = lv === 1 ? 11 : 12, wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
   // ---- 仮置き(未定義) ----
   { name: 'S4 (仮)', cpu: 400, ranges: [[4, 9, 11], [6, 9, 13], [99, 11, 13]], skill: { cd: 3, hp: [300, 200, 100], len: 2, cards: (lv, turn) => { const r = lv === 1 ? S4P : S4P + 2; return [0, 1, 2].map(() => ({ suit: pick(['D', 'C', 'S']), rank: r })); } } },
-  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 2, cards: (lv) => { const r = lv === 1 ? S5P : S5P + 2, w = S5P - 5 + (lv === 1 ? 0 : 2), wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
+  { name: 'S5 (仮)', cpu: 500, ranges: [[4, 10, 13], [6, 11, 13], [99, 12, 13]], skill: { cd: 3, hp: [400, 300, 200, 100], len: 3, cards: (lv) => { const r = lv === 1 ? S5P : S5P + 2, w = S5P - 5 + (lv === 1 ? 0 : 2), wi = rnd(3); return [0, 1, 2].map(i => i === wi ? { suit: 'H', rank: w } : { suit: pick(['D', 'C', 'S']), rank: r }); } } },
 ].slice(0, STAGE_COUNT).map(s => ({ ...s, skill: { ...s.skill, len: s.skill.len + LEN_PLUS } }));
 
 function resolve(p, c, sk, mods = {}) {
@@ -110,7 +111,7 @@ function chooseOneMore(S, sk, optimal) {
 // ---------------- one stage ----------------
 function playStage(st, deckCounts, sk, optimal) {
   const deck = []; for (const k in deckCounts) for (let i = 0; i < deckCounts[k]; i++) deck.push({ suit: k[0], rank: +k.slice(1) });
-  const S = { me: ME_HP, cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
+  const S = { me: ME_HP + 10 * (sk.hp ?? HP_LV), cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
     skillActive: false, skillRounds: 0, skillLevel: 0, skillCd: st.skill.cd, hpTrigger: false, hpTriggers: st.skill.hp.slice().sort((a, b) => b - a) };
   refill(S);
   while (S.round < 60) {

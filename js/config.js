@@ -48,8 +48,10 @@ const SKILLS={
   tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:50000},
   triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
   royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+50',cost:10000},
-  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:20000}
+  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:20000},
+  hp:{name:'最大HP +10',desc:'自分の最大HPが+10(5段階まで)。型の完成度とHPをポイントで天秤にかける',levels:[10000,15000,20000,25000,30000]}
 };
+const HP_PER_LEVEL=10;
 /* skill patterns on the 3 played cards (normal battle and 1more alike) */
 function skillPatterns(cards,inOneMore,hand){
   const sk=(typeof RUN!=='undefined'&&RUN)?RUN.skills:{};

@@ -2,7 +2,7 @@
 let S=null,timerId=null,uid=0,seq=0;
 /* RUN: carried across stages (points, deck composition, skills). S: one battle */
 let RUN=null;
-function newRun(){RUN={points:0,deck:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false},checkpoint:null};}
+function newRun(){RUN={points:0,deck:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
 function addScore(key,label){
   const pts=SCORE[key];S.score+=pts;S.scoreLog.push({label,pts});
   log(`　+${pts.toLocaleString()} ${label}`,'gold');scoreToast(label,pts);$('scoreLbl').textContent=`SCORE ${S.score.toLocaleString()}`;
@@ -99,8 +99,8 @@ async function endEnemySkillIfDue(my){
 /* ---- game flow ---- */
 function freshState(stage=0){
   if(!RUN)newRun();
-  const cpuMax=STAGES[stage].cpu;
-  S={stage,cpuMax,me:MAX_ME,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
+  const cpuMax=STAGES[stage].cpu,meMax=MAX_ME+HP_PER_LEVEL*(RUN.skills.hp||0);
+  S={stage,cpuMax,meMax,me:meMax,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
     score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:STAGES[stage].skill.cd,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
@@ -217,7 +217,7 @@ async function commit(){
       flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true,popBeats:T.pop,flyBeats:T.fly});
       S.me=Math.max(0,S.me-r.dmgMe);sfxDamage(r.dmgMe);S.tookDamage=true;S.streak=0;fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
     }
-    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');}
+    if(r.heal&&S.me>0){S.me=Math.min(S.meMax||MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');}
     render();
     if(lethal){await wait(BEAT*1.6);$('l'+i).classList.remove('focus');setSlowmo(false);}
     const who=c?`${cardName(p)}(${r.pv}) vs ${cardName(c)}(${r.cv})`:`${cardName(p)}(${r.pv})`;

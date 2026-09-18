@@ -15,7 +15,7 @@ $('rulesBtn').addEventListener('click',()=>$('rules').showModal());
 /* hot reload: keep the game across republishes */
 function start(data){
   if(data&&data.S&&data.S.phase!=='over'&&data.S.phase!=='intro'){
-    S=data.S;uid=data.uid||uid;S.clash=-1;if(S.stage==null)S.stage=0;if(S.cpuMax==null)S.cpuMax=MAX_CPU;
+    S=data.S;uid=data.uid||uid;S.clash=-1;if(S.stage==null)S.stage=0;if(S.cpuMax==null)S.cpuMax=MAX_CPU;if(S.meMax==null)S.meMax=MAX_ME;
     RUN=data.RUN||null;if(!RUN)newRun();
     if(S.score==null){S.score=0;S.scoreLog=[];S.kills=0;S.streak=0;S.tookDamage=false;S.timeUsed=0;S.roundDmg=0;S.chainReady=false;}
     $('log').innerHTML='';

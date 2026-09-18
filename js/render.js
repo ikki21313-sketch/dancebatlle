@@ -30,11 +30,11 @@ function cardEl(c,small){
 function backEl(){const d=document.createElement('div');d.className='card back';d.innerHTML='<span class="q">0</span>';return d;}
 function render(){
   const sel=S.phase==='select'||S.phase==='onemore';
-  const cpuMax=S.cpuMax||MAX_CPU;
+  const cpuMax=S.cpuMax||MAX_CPU,meMax=S.meMax||MAX_ME;
   $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('cpuName').textContent=STAGES[S.stage||0].enemy;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
-  $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${MAX_ME}</small>`;
-  const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/MAX_ME*100)+'%';
-  cb.classList.toggle('low',S.cpu<=cpuMax*.3);mb.classList.toggle('low',S.me<=MAX_ME*.3);
+  $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${meMax}</small>`;
+  const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/meMax*100)+'%';
+  cb.classList.toggle('low',S.cpu<=cpuMax*.3);mb.classList.toggle('low',S.me<=meMax*.3);
   const dealing=S.phase==='deal';
   $('field').classList.toggle('om',S.onemore);$('field').classList.toggle('enemy',!!S.skillActive);
   for(let i=0;i<3;i++){
