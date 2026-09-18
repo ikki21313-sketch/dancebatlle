@@ -211,11 +211,45 @@ dialog li{margin:3px 0}
 .lane .spark.big{width:22px;height:22px;margin:-11px;background:#fff;animation:sparkBig .5s ease-out forwards}
 @keyframes sparkBig{0%{transform:scale(.3);opacity:1;box-shadow:0 0 0 0 rgba(255,255,255,.9)}100%{transform:scale(9);opacity:0;box-shadow:0 0 0 28px rgba(227,179,92,0)}}
 .field.quake{animation:quake .35s cubic-bezier(.3,.1,.3,1),fieldGlow 1.1s ease-in-out infinite alternate}
-@keyframes quake{0%{transform:translate(0,0)}20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}100%{transform:translate(0,0)}}
 .float.big{font-size:44px;color:#fff;text-shadow:0 0 12px var(--gold),0 2px 8px rgba(0,0,0,.6)}
 .flashwhite{position:fixed;inset:0;background:#fff;z-index:45;pointer-events:none;opacity:0}
 .flashwhite.go{animation:whiteFlash .3s ease-out}
+.flashwhite.go.mid{animation-duration:.5s}
+.flashwhite.go.red{background:#ff3b2f;animation-duration:.5s}
+.flashwhite.go.big{animation:whiteFlashBig 1.1s ease-out}
 @keyframes whiteFlash{0%{opacity:.55}100%{opacity:0}}
+@keyframes whiteFlashBig{0%{opacity:.95}30%{opacity:.7}100%{opacity:0}}
+
+/* flying damage numbers: pop at the card, then fly to the target's HP */
+.fxlayer{position:fixed;inset:0;pointer-events:none;z-index:46;overflow:hidden}
+.dmgfly{position:absolute;left:0;top:0;font-family:var(--num);font-weight:700;line-height:1;white-space:nowrap;text-align:center;will-change:transform;
+  --sz:30px;--glow:rgba(255,255,255,.6);font-size:var(--sz);color:#fff;text-shadow:0 0 8px var(--glow),0 2px 6px rgba(0,0,0,.8)}
+.dmgfly .n{display:block}
+.dmgfly .lbl{display:block;font-family:var(--body);font-weight:900;font-size:calc(var(--sz)*.28);letter-spacing:.2em;margin-top:4px;color:#fff;text-shadow:0 0 10px var(--glow),0 1px 4px rgba(0,0,0,.8)}
+.dmgfly.t1{--sz:44px;--glow:var(--gold);color:#fff3cf}
+.dmgfly.t2{--sz:60px;--glow:var(--gold);color:#ffe08a;-webkit-text-stroke:1.5px #3a2400}
+.dmgfly.t3{--sz:80px;--glow:#ff8a3d;color:#ffd166;-webkit-text-stroke:2px #3a1600;animation:dmgFlicker .12s steps(2) infinite}
+.dmgfly.t4{--sz:104px;--glow:#ff3b2f;color:#fff;-webkit-text-stroke:2.5px #5a0000;animation:dmgFlicker .1s steps(2) infinite}
+.dmgfly.lethal{--sz:150px;--glow:#ff2a1a;color:#fff;-webkit-text-stroke:3px #6a0000;animation:dmgFlicker .16s steps(2) infinite}
+.dmgfly.me{--glow:var(--bad);color:#ffd9d3}
+@keyframes dmgFlicker{0%{filter:brightness(1)}100%{filter:brightness(1.6) saturate(1.4)}}
+.burst{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 12px var(--gold);will-change:transform}
+.ring{position:absolute;width:20px;height:20px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 24px var(--gold);will-change:transform}
+.fighter.hitbig{animation:shakeBig .6s}
+@keyframes shakeBig{10%{transform:translate(-10px,3px)}25%{transform:translate(9px,-4px)}40%{transform:translate(-7px,2px)}55%{transform:translate(6px,-2px)}70%{transform:translate(-4px,1px)}85%{transform:translate(2px,0)}}
+.field.quake{--q:6px}
+@keyframes quake{0%{transform:translate(0,0)}20%{transform:translate(calc(var(--q)*-1),calc(var(--q)*.5))}40%{transform:translate(var(--q),calc(var(--q)*-.5))}60%{transform:translate(calc(var(--q)*-.7),calc(var(--q)*.3))}80%{transform:translate(calc(var(--q)*.5),calc(var(--q)*-.2))}100%{transform:translate(0,0)}}
+
+/* Last Attack: slow motion, blur everything but the deciding lane */
+.vignette{position:fixed;inset:0;pointer-events:none;z-index:44;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.82) 100%);opacity:0;transition:opacity .5s}
+body.slowmo .vignette{opacity:1}
+body.slowmo .lane:not(.focus),body.slowmo .hand,body.slowmo .hand-head,body.slowmo .control,body.slowmo .log,body.slowmo .top,body.slowmo .fighter.me{filter:blur(3px) saturate(.5) brightness(.7);transition:filter .5s}
+body.slowmo .fighter.cpu{filter:saturate(1.2)}
+body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s}
+.cutin.last .band{background:#0a0a0a;border-top:4px solid #ff2a1a;border-bottom:4px solid #ff2a1a;height:190px}
+.cutin.last .band::before,.cutin.last .band::after{background:repeating-linear-gradient(90deg,#ff2a1a 0 24px,transparent 24px 48px);opacity:.7;height:6px}
+.cutin.last .txt{color:#fff;text-shadow:0 0 16px #ff2a1a,0 0 48px #ff2a1a,0 0 90px #ff2a1a;font-size:96px}
+.cutin.last .sub{color:#ffb3ad}
 
 /* 1more: caution tapes slapped on both sides of the stage */
 .omfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -246,6 +280,8 @@ dialog li{margin:3px 0}
   .actions{justify-content:stretch}.actions .btn{flex:1}
   .cutin .txt{font-size:44px}.cutin .band{height:100px}
   .cutin .txt.long{font-size:28px}.cutin.rev .band{height:110px}
+  .cutin.last .txt{font-size:44px}.cutin.last .band{height:120px}
+  .dmgfly.t3{--sz:60px}.dmgfly.t4{--sz:76px}.dmgfly.lethal{--sz:100px}
   .cutin .sub{font-size:13px}.cutin.has-sub .band{height:130px}
   .tape{height:34px;line-height:34px;font-size:20px}
   .hpnum{font-size:20px}
@@ -312,6 +348,8 @@ dialog li{margin:3px 0}
 </div>
 
 <div class="omfx" id="omfx" hidden><div class="side l" id="om-l"></div><div class="side r" id="om-r"></div></div>
+<div class="vignette"></div>
+<div class="fxlayer" id="fxlayer"></div>
 <div class="flashwhite" id="flashwhite"></div>
 <div class="dimmer" id="dimmer"></div>
 <div class="cutin" id="cutin"><div class="band"></div><div class="stack"><div class="txt" id="cutinTxt"></div><div class="sub" id="cutinSub"></div></div></div>
@@ -499,7 +537,7 @@ function freshState(){
 }
 async function newGame(){
   const my=++seq;
-  stopTimer();omfxHide();$('comboNote').hidden=true;freshState();
+  stopTimer();omfxHide();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
   $('log').innerHTML='';$('over').classList.remove('show');
   render();
   await cutIn('Get Ready?','alt');
@@ -576,17 +614,40 @@ async function commit(){
   let wins=0,dead=false;
   for(let i=0;i<3;i++){
     const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined);
+    /* Last Attack: this hit would finish the CPU */
+    const lethal=r.dmgCpu>0&&r.dmgCpu>=S.cpu,slow=lethal?3:1;
+    if(lethal){
+      log('次の一撃で相手のHPが0に。Last Attack!!!','gold');
+      await cutIn('Last Attack!!!','last',4,'とどめの一撃');if(my!==seq)return;
+      setSlowmo(true);$('l'+i).classList.add('focus');await wait(BEAT*.6);if(my!==seq)return;
+    }
     /* beat 1: the two cards move in */
     S.clash=i;render();
-    await wait(BEAT*.7);if(my!==seq)return;
-    /* impact: apply damage, show verdict */
+    await wait(BEAT*.7*slow);if(my!==seq)return;
+    /* impact: show verdict, then the number flies to the target's HP */
     S.results[i]=r;S.clash=-1;
-    if(oneMore){sfx('slash');slashFx(i);quake();}
-    if(r.dmgCpu){S.cpu=Math.max(0,S.cpu-r.dmgCpu);fx('cpuBox','hit flash');floatNum('cpuBox','−'+r.dmgCpu,oneMore?'dmg big':'dmg');}
-    if(r.dmgMe){S.me=Math.max(0,S.me-r.dmgMe);fx('meBox','hit flash');floatNum('meBox','−'+r.dmgMe,'dmg');}
-    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');}
+    if(oneMore||lethal){sfx('slash');slashFx(i);quake(lethal?10:6);}
     if(r.win)wins++;
-    spark(i,oneMore);render();
+    spark(i,oneMore||lethal);render();
+    if(r.dmgCpu){
+      const tier=dmgTier(r.dmgCpu);
+      await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal});if(my!==seq)return;
+      S.cpu=Math.max(0,S.cpu-r.dmgCpu);
+      fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
+      if(lethal){flash('big');quake(16);}
+      else if(tier>=4){flash('red');quake(12);}
+      else if(tier>=3){flash('mid');quake(9);}
+      else if(tier>=2)quake(6);
+      render();
+    }
+    if(r.dmgMe){
+      const tier=dmgTier(r.dmgMe);
+      await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true});if(my!==seq)return;
+      S.me=Math.max(0,S.me-r.dmgMe);fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
+      render();
+    }
+    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');render();}
+    if(lethal){await wait(BEAT*1.6);$('l'+i).classList.remove('focus');setSlowmo(false);}
     const who=c?`${cardName(p)}(${r.pv}) vs ${cardName(c)}(${r.cv})`:`${cardName(p)}(${r.pv})`;
     const tag=r.mul?' ['+r.mul+']':'';
     if(r.dmgCpu)log(`${i+1}枚目 ${who} → CPUに ${r.dmgCpu} ダメージ${tag}`,'good');
@@ -633,7 +694,51 @@ function floatNum(id,text,cls){const f=document.createElement('span');f.classNam
 function spark(i,big){const s=document.createElement('span');s.className='spark'+(big?' big':'');$('l'+i).appendChild(s);setTimeout(()=>s.remove(),550);}
 function slashFx(i){const lane=$('l'+i);for(const c of ['','b']){const e=document.createElement('span');e.className='slash '+c;lane.appendChild(e);setTimeout(()=>e.remove(),500);}
   const w=$('flashwhite');w.classList.remove('go');void w.offsetWidth;w.classList.add('go');}
-function quake(){const f=$('field');f.classList.remove('quake');void f.offsetWidth;f.classList.add('quake');setTimeout(()=>f.classList.remove('quake'),400);}
+function quake(px=6){const f=$('field');f.classList.remove('quake');void f.offsetWidth;f.style.setProperty('--q',px+'px');f.classList.add('quake');setTimeout(()=>f.classList.remove('quake'),400);}
+function flash(kind=''){const w=$('flashwhite');w.className='flashwhite';void w.offsetWidth;w.className='flashwhite go '+kind;}
+/* damage tiers: 0-4 → plain, 5-9 → t1, 10-14 → t2, 15-19 → t3, 20+ → t4 */
+function dmgTier(n){return n>=20?4:n>=15?3:n>=10?2:n>=5?1:0;}
+const TIER_LABEL=['','','HIT!','BIG HIT!','SMASH!!'];
+function center(el){const r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};}
+function burst(x,y,count,dist,ms,ring){
+  const layer=$('fxlayer');
+  for(let i=0;i<count;i++){const b=document.createElement('span');b.className='burst';b.style.left=x+'px';b.style.top=y+'px';layer.appendChild(b);
+    const a=(i/count)*Math.PI*2+Math.random()*.5,d=dist*(.6+Math.random()*.6);
+    b.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(calc(${Math.cos(a)*d}px - 50%),calc(${Math.sin(a)*d}px - 50%)) scale(.2)`,opacity:0}],{duration:ms,easing:'cubic-bezier(.1,.8,.3,1)',fill:'forwards'});setTimeout(()=>b.remove(),ms+50);}
+  if(ring){const r=document.createElement('span');r.className='ring';r.style.left=x+'px';r.style.top=y+'px';layer.appendChild(r);
+    r.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},{transform:`translate(-50%,-50%) scale(${ring})`,opacity:0}],{duration:ms*1.2,easing:'ease-out',fill:'forwards'});setTimeout(()=>r.remove(),ms*1.2+50);}
+}
+/* a damage number pops at `fromEl`, hangs a beat, then flies into `toEl` (the target's HP) */
+async function flyDamage(fromEl,toEl,value,tier,opts={}){
+  const {slow=1,toMe=false,lethal=false}=opts;
+  const a=center(fromEl),b=center(toEl);
+  const el=document.createElement('div');el.className='dmgfly t'+tier+(toMe?' me':'')+(lethal?' lethal':'');
+  const lbl=lethal?'LAST ATTACK':(TIER_LABEL[tier]||'');
+  el.innerHTML=`<span class="n">${value}</span>`+(lbl?`<span class="lbl">${lbl}</span>`:'');
+  el.style.left=a.x+'px';el.style.top=a.y+'px';$('fxlayer').appendChild(el);
+  const dx=b.x-a.x,dy=b.y-a.y,arc=(toMe?1:-1)*Math.min(120,Math.abs(dy)*.35);
+  const pop=BEAT*(.55+tier*.08)*slow,fly=BEAT*(.55+tier*.05)*slow;
+  const T=(x,y,sc)=>`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;
+  /* timers, not Animation.finished: finished-promises stall when the tab is not rendering */
+  el.animate([
+    {transform:T(0,0,.2),opacity:0},
+    {transform:T(0,0,1.35+tier*.08),opacity:1,offset:.45},
+    {transform:T(0,0,1),opacity:1}
+  ],{duration:pop,easing:'cubic-bezier(.2,.9,.3,1.4)',fill:'forwards'});
+  await wait(pop);
+  if(tier>=2)burst(a.x,a.y,6+tier*3,40+tier*15,BEAT*1.2*slow,0);
+  el.animate([
+    {transform:T(0,0,1)},
+    {transform:T(dx*.5,dy*.5+arc,1.1),offset:.5},
+    {transform:T(dx,dy,.7)}
+  ],{duration:fly,easing:'cubic-bezier(.4,0,.8,.4)',fill:'forwards'});
+  await wait(fly);
+  /* impact */
+  el.animate([{transform:T(dx,dy,.7),opacity:1},{transform:T(dx,dy,1.6+tier*.2),opacity:0}],{duration:BEAT*.8*slow,easing:'ease-out',fill:'forwards'});
+  setTimeout(()=>el.remove(),BEAT*.8*slow+50);
+  if(tier>=1)burst(b.x,b.y,8+tier*4,50+tier*22,BEAT*1.3*slow,tier>=3?7+tier:0);
+}
+function setSlowmo(on){document.body.classList.toggle('slowmo',on);document.documentElement.style.setProperty('--beat',(on?BEAT*3:BEAT)+'ms');}
 function log(t,cls){const li=document.createElement('li');li.textContent=t;if(cls)li.className=cls;const o=$('log');o.appendChild(li);o.scrollTop=o.scrollHeight;}
 
 /* ---- render ---- */
