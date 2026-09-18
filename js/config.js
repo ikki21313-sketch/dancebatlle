@@ -47,7 +47,7 @@ const SKILLS={
   chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000},
   tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:50000},
   triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
-  royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+100',cost:10000},
+  royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+50',cost:10000},
   special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:20000}
 };
 /* skill patterns on the 3 played cards (normal battle and 1more alike) */
@@ -61,7 +61,7 @@ function skillPatterns(cards,inOneMore,hand){
   }
   if(sk.triple7&&sameRank&&cards[0].rank===7&&suits===3){out.triple7=true;out.cutins.push(['Triple 7!','1moreのあと手札を補充してさらに1more']);}
   if(sk.royal&&suits===1&&[11,12,13].every(r=>cards.some(c=>c.rank===r))){
-    out.mods=out.mods.map(m=>({...m,add:(m.add||0)+100,tag:(m.tag?m.tag+' ':'')+'ロイヤル+100'}));out.royal=true;out.cutins.push(['Royal Straight!','J・Q・Kのパワー +100']);
+    out.mods=out.mods.map(m=>({...m,add:(m.add||0)+50,tag:(m.tag?m.tag+' ':'')+'ロイヤル+50'}));out.royal=true;out.cutins.push(['Royal Straight!','J・Q・Kのパワー +50']);
   }
   if(sk.special&&inOneMore&&sameRank&&suits===3){
     out.mods=out.mods.map(m=>({...m,mul:(m.mul||1)*3,tag:(m.tag?m.tag+' ':'')+'Special ×3'}));out.special=true;out.cutins.push(['Special Attack!','同じ数字3枚 → パワー3倍']);
