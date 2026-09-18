@@ -734,8 +734,10 @@ async function commit(){
   const suitsDiffer=new Set(played.map(c=>c.suit)).size===3;
   if(!oneMore&&wins===3&&!suitsDiffer)log('3枚すべてに勝利。ただし同じスートが含まれるので1moreは発生しない');
   if(!oneMore&&wins===3&&suitsDiffer){
-    S.phase='onemore';S.onemore=true;S.results=[null,null,null];
     log('3枚すべてに勝利! 1more 発動。好きな3枚を追加で出せます','gold');
+    /* the CPU's cards blow away before the 1more cut-in (unless Revolution already did it) */
+    if(!S.revolution){S.results=[null,null,null];S.blown=true;render();await wait(BEAT*2);if(my!==seq)return;S.blown=false;}
+    S.phase='onemore';S.onemore=true;S.results=[null,null,null];
     render();
     sfx('onemore');omfxShow();
     await cutIn('1 More!','',2.6);if(my!==seq)return;
