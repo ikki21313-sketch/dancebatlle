@@ -23,7 +23,7 @@ function start(data){
     if(S.phase==='onemore')omfxShow();
     if(S.skillActive)omfxShow('dgfx');
     if(S.limit==null)S.limit=LIMIT_START;
-    if(S.skillCd==null||!S.hpTriggers){S.skillActive=false;S.skillRounds=0;S.skillLevel=0;S.skillCd=STAGES[S.stage].skill.cd;S.hpTrigger=false;S.hpTriggers=STAGES[S.stage].skill.hp.slice().sort((a,b)=>b-a);}
+    if(!S.hpTriggers){S.skillActive=false;S.skillRounds=0;S.skillLevel=0;S.hpTrigger=false;S.hpTriggers=STAGES[S.stage].skill.hp.slice().sort((a,b)=>b-a);}
     if(S.phase==='select'||S.phase==='onemore'){
       if(data.pausedLeft!=null){pausedLeft=data.pausedLeft;renderTimer(pausedLeft);render();}
       else{startTimer(Math.max(1000,(S.deadline||0)-Date.now()));render();}

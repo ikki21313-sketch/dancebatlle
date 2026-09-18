@@ -31,6 +31,10 @@ h1,h2{margin:0}
 .hpbar{height:14px;background:var(--felt-deep);border-radius:7px;overflow:hidden;border:1px solid var(--felt-line)}
 .hpbar i{display:block;height:100%;background:var(--good);transition:width .45s cubic-bezier(.2,.8,.2,1)}
 .hpbar i.low{background:var(--bad)}
+.hpbar{position:relative}
+.hpbar .ticks{position:absolute;inset:0;pointer-events:none}
+.hpbar .ticks i{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1px;background:#ff4a3a;border-radius:2px;box-shadow:0 0 6px rgba(255,74,58,.8)}
+.hpbar .ticks i.used{background:var(--dim);box-shadow:none;opacity:.6}
 .hpnum{font-family:var(--num);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;min-width:4.2em;text-align:right}
 .hpnum small{font-size:14px;color:var(--muted);font-weight:500}
 .fighter.hit{animation:shake .4s}

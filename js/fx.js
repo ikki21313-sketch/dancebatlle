@@ -75,5 +75,5 @@ async function flyDamage(fromEl,toEl,value,tier,opts={}){
   setTimeout(()=>el.remove(),BEAT*.8*slow+50);
   if(tier>=1)burst(b.x,b.y,8+tier*4,50+tier*22,BEAT*1.3*slow,tier>=3?7+tier:0);
 }
-function scoreToast(label,pts){const t=document.createElement('div');t.className='toast';t.innerHTML=`${label}<b>+${pts.toLocaleString()}</b>`;$('toasts').appendChild(t);setTimeout(()=>t.remove(),2000);}
+function scoreToast(label,pts){const t=document.createElement('div');t.className='toast';t.innerHTML=`${label}${pts?`<b>+${pts.toLocaleString()}</b>`:''}`;$('toasts').appendChild(t);setTimeout(()=>t.remove(),2000);}
 function setSlowmo(on){document.body.classList.toggle('slowmo',on);document.documentElement.style.setProperty('--beat',(on?BEAT*3:BEAT)+'ms');}

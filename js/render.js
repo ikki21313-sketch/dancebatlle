@@ -17,12 +17,13 @@ function log(t,cls){const li=document.createElement('li');li.textContent=t;if(cl
 function cardEl(c,small){
   const s=SUITS[c.suit],d=document.createElement('div');
   d.className='card '+s.cls+(small?' sm':'');
-  const rk=rankLabel(c.rank);if(c.skill)d.classList.add('skill');
+  const rk=rankLabel(c.rank);if(c.skill)d.classList.add('skill');if(c.chest)d.classList.add('chest');
   d.innerHTML=`<div class="corner">${rk}<span>${s.sym}</span></div>`
     +`<div class="mid"><span class="hand-ico">${s.ico}</span><span class="lbl">${s.label}</span></div>`
     +`<div class="corner bottom">${rk}<span>${s.sym}</span></div>`;
   if(c.buff){const b=document.createElement('span');b.className='buff-tag';b.textContent={sword:'⚔ K化',copy:'◆ 複製',clover:'♣ K化'}[c.buff]||c.buff;d.appendChild(b);}
   if(c.skill){const b=document.createElement('span');b.className='buff-tag';b.textContent='SKILL';d.appendChild(b);}
+  if(c.chest){const b=document.createElement('span');b.className='chest-tag';b.title='倒すとカードを1枚獲得';b.textContent='宝箱';d.appendChild(b);}
   if(c.spawn)d.classList.add('spawn');else if(c.flash)d.classList.add('buffed');else if(c.done)d.classList.add('buffdone');
   if(c.fxLabel){const f=document.createElement('span');f.className='fx-label'+(c.done?' static':'');f.textContent=c.fxLabel;d.appendChild(f);}
   return d;
@@ -34,7 +35,10 @@ function render(){
   $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('cpuName').textContent=STAGES[S.stage||0].enemy;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
   $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${meMax}</small>`;
   const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/meMax*100)+'%';
-  cb.classList.toggle('low',S.cpu<=cpuMax*.3);mb.classList.toggle('low',S.me<=meMax*.3);
+  cb.classList.toggle('low',S.cpu<=cpuMax*.3);
+  /* skill ticks: one vertical bar per HP threshold; consumed ones go dim */
+  const ticks=$('cpuTicks');ticks.innerHTML='';const all=STAGES[S.stage||0].skill.hp,left=S.hpTriggers||[];
+  for(const th of all){const t=document.createElement('i');t.style.left=(th/cpuMax*100)+'%';t.title=`HP ${th} でスキル発動`;if(!left.includes(th))t.classList.add('used');ticks.appendChild(t);}mb.classList.toggle('low',S.me<=meMax*.3);
   const dealing=S.phase==='deal';
   $('field').classList.toggle('om',S.onemore);$('field').classList.toggle('enemy',!!S.skillActive);
   for(let i=0;i<3;i++){

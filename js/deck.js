@@ -13,7 +13,9 @@ function detectCombo(cards){
 
 function stageCfg(){return STAGES[S.stage||0];}
 /* enemy plays 3 random cards inside the stage's range for this round (the enemy 'deck' is a range, not a pile) */
-function cpuDeal(){const rg=stageCfg().ranges.find(r=>S.round<=r.until);return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:rg.min+Math.floor(Math.random()*(rg.max-rg.min+1))}));}
+function cpuDeal(){const rg=stageCfg().ranges.find(r=>S.round<=r.until);return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:rg.min+Math.floor(Math.random()*(rg.max-rg.min+1)),chest:Math.random()<CHEST_RATE}));}
+/* a random card for a chest: any suit, 3〜K, respecting the copy limit; returns null if the deck is full everywhere */
+function chestCard(){for(let i=0;i<20;i++){const suit='DSC'[Math.floor(Math.random()*3)],rank=CHEST_MIN_RANK+Math.floor(Math.random()*(CHEST_MAX_RANK-CHEST_MIN_RANK+1));if((RUN.deck[suit+rank]||0)<DECK_MAX_COPIES)return {suit,rank};}return null;}
 function cardName(c){return SUITS[c.suit].sym+rankLabel(c.rank);}
 function skillDeal(){const sk=stageCfg().skill,turn=sk.len-S.skillRounds+1;return sk.cards(S.skillLevel,turn).map(c=>({id:++uid,suit:c.suit,rank:c.rank,skill:true}));}
 

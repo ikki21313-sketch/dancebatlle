@@ -15,7 +15,7 @@ const TUTORIAL=[
      return r;}},
   {title:'1 More!',lead:'3枚ぜんぶ勝って、スートがバラバラなら 1more。',
    shots:[{src:'img/tut_1more.png',cap:'相手は 0。数字がそのまま入る'},{src:'img/tut_skill.png',cap:'敵のスキル中は 13 が並ぶ。耐えれば Skill Break!'}],
-   body:'相手は <b>0</b>。こっちの数字が丸ごとダメージになる追い打ちタイム。温存したいなら <span class="k">スキップ</span> もOK。<br>敵はたまにスキルで <b>13</b> を並べてくる。耐えきれば <span class="k">Skill Break!</span> で手札の上限+1。',
+   body:'相手は <b>0</b>。こっちの数字が丸ごとダメージになる追い打ちタイム。温存したいなら <span class="k">スキップ</span> もOK。<br>敵のHPバーの <b>赤い縦棒</b> まで削るとスキルが来る。13以上を並べてくるけど、耐えきれば <span class="k">Skill Break!</span> で手札の上限+1。<br><span class="k">宝箱</span> 付きのカードを倒すと、カードを1枚ゲット。',
    illo(){const r=el('div','tut-row');
      const b=backEl();r.append(col(b,'相手は 0'),el('span','tut-vs','VS'),col(tc('D',10,'won'),'そのまま','good'),col(el('span','tut-num gold','−10'),'10ダメージ','gold'));
      return r;}},
@@ -39,7 +39,7 @@ const TUTORIAL=[
      return g;}},
   {title:'Build Your Deck',lead:'勝てばスコア。スコアでデッキをいじる。',
    shots:[{src:'img/tut_build.png',cap:'ステージの間に出る画面。変えたところは黄色、迷ったらリセット'}],
-   body:'撃破・1more・コンボ・ノーダメージ、速さでもポイントが入る。ステージの間に <b>カードを足す / 減らす</b>(減らすとポイントが返る)、<b>スキルを買う</b>。<br>ルールは2つだけ。<span class="k">20枚以上</span>、<span class="k">同じカードは3枚まで</span>。迷ったらリセット。',
+   body:'撃破・1more・コンボ・ノーダメージ、速さでもポイントが入る。ステージの間に <b>カードを足す</b>(1枚30,000、Q・Kは40,000)、<b>減らす</b>(ポイントが返る)、<b>スキルやHPを買う</b>。<br>ルールは2つだけ。<span class="k">20枚以上</span>、<span class="k">同じカードは3枚まで</span>。迷ったらリセット。',
    illo(){const w=el('div','tut-build');
      const m=el('div','mini');m.append(el('span','tut-cap','デッキ表'),el('div','cellrow','<span class="cell"><i>−</i><b>1</b><i>+</i></span><span class="cell y"><i>−</i><b>2</b><i>+</i></span><span class="cell"><i>−</i><b>1</b><i>+</i></span><span class="cell y"><i>−</i><b>0</b><i>+</i></span>'),el('span','tut-cap','変えたところは黄色'));
      const s=el('div','mini');s.append(el('span','tut-cap','スキル'),el('span','tut-chip gold','相性有利で4倍  20,000 pt'),el('span','tut-chip','毎ターン+1ドロー  10,000 pt'));

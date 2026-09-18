@@ -78,8 +78,7 @@ async function runCombo(k,my){
 async function maybeEnemySkill(my){
   if(S.skillActive)return;
   const sk=stageCfg().skill;
-  S.skillCd--;
-  if(S.skillCd>0&&!S.hpTrigger)return;
+  if(!S.hpTrigger)return;   /* no cooldown: only HP thresholds trigger the skill */
   S.hpTrigger=false;S.skillActive=true;S.skillRounds=sk.len;S.skillLevel++;
   log(`${stageCfg().enemy} のスキル発動! ${sk.desc(S.skillLevel)}`,'bad');
   sfx('alert');omfxShow('dgfx');render();
@@ -89,7 +88,7 @@ async function endEnemySkillIfDue(my){
   if(!S.skillActive)return;
   S.skillRounds--;
   if(S.skillRounds>0)return;
-  S.skillActive=false;S.skillCd=stageCfg().skill.cd;S.handMax+=1;
+  S.skillActive=false;S.handMax+=1;
   omfxHide('dgfx');render();
   log(`Skill Break! 相手のスキルが切れた。手札上限が ${S.handMax} 枚に`,'gold');
   addScore('skillBreak','Skill Break');
@@ -101,7 +100,7 @@ function freshState(stage=0){
   if(!RUN)newRun();
   const cpuMax=STAGES[stage].cpu,meMax=MAX_ME+HP_PER_LEVEL*(RUN.skills.hp||0);
   S={stage,cpuMax,meMax,me:meMax,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
-    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,skillCd:STAGES[stage].skill.cd,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
+    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
 /* a stage = one full battle. stages run 1 → build screen → 2 → build screen → 3 → all clear */
@@ -228,6 +227,8 @@ async function commit(){
     /* score: a kill = beating a real CPU card (not the 0s of 1more / Revolution) */
     if(r.win&&c){
       S.kills++;S.streak++;roundKills++;addScore('kill','撃破');
+      if(c.chest){const g=chestCard();if(g){RUN.deck[g.suit+g.rank]=(RUN.deck[g.suit+g.rank]||0)+1;S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,{id:++uid,suit:g.suit,rank:g.rank});
+        log(`　宝箱! ${cardName(g)} をデッキに獲得(山札にも1枚追加)`,'gold');scoreToast(`宝箱 ${cardName(g)} を獲得`,0);}}
       if(S.streak===5)addScore('streak5','ノーダメージで5枚撃破');
       else if(S.streak===10)addScore('streak10','ノーダメージで10枚撃破');
       else if(S.streak===15)addScore('streak15','ノーダメージで15枚撃破');

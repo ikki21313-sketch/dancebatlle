@@ -12,46 +12,48 @@ const MAX_ME=30,MAX_CPU=200,HAND=6,BEAT=450;
 /* player's starting deck (Stage.md): 3〜10 of each suit, one copy each */
 const PLAYER_MIN_RANK=3,PLAYER_MAX_RANK=10;
 /* stages (Stage.md). ranges: what the enemy can play by round (until = last round the row applies to).
-   skill: cd = rounds between activations (fires on the cd-th round), hp = HP thresholds that trigger it,
+   skill: hp = HP thresholds that trigger it (no cooldown: the skill fires only when the enemy's HP crosses one),
    len = rounds it lasts, cards(level,turn) = the 3 cards for that skill round, desc(level) = cut-in subtitle */
 const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
 const STAGES=[
   {name:'STAGE 1',enemy:'イッチメーン',cpu:150,bgm:'music/Groovy_Ignition.mp3',
    ranges:[{until:4,min:3,max:6},{until:6,min:3,max:8},{until:Infinity,min:7,max:11}],
-   skill:{cd:4,hp:[100,50],len:1,
+   skill:{hp:[100,50],len:1,
      cards:(level,turn)=>{const r=level===1?13:14;return ['D','C','S'].map(suit=>({suit,rank:r}));},
      desc:level=>`相手の場が ♦♣♠ の ${level===1?13:14} になる(1ラウンド)`}},
   {name:'STAGE 2',enemy:'ニーメン',cpu:200,bgm:'music/stage2.mp3',
    ranges:[{until:4,min:5,max:7},{until:6,min:5,max:9},{until:Infinity,min:7,max:11}],
-   skill:{cd:4,hp:[150,100,50],len:3,
+   skill:{hp:[150,100,50],len:3,
      cards:(level,turn)=>{const r=level===1?13:15,suit=['D','C','S'][turn-1];return [0,1,2].map(()=>({suit,rank:r}));},
      desc:level=>`3ラウンドの間、♦→♣→♠ の順に ${level===1?13:15} が3枚ずつ出る`}},
   {name:'STAGE 3',enemy:'ラストリオン',cpu:300,bgm:'music/stage3.mp3',
    ranges:[{until:4,min:7,max:10},{until:6,min:7,max:12},{until:Infinity,min:10,max:13}],
-   skill:{cd:3,hp:[200,100],len:2,
+   skill:{hp:[200,100],len:2,
      cards:(level,turn)=>{const r=level===1?15:17,w=level===1?13:14,wi=Math.floor(Math.random()*3);
        return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
      desc:level=>`2ラウンドの間、♦♣♠ の ${level===1?15:17} と、相性のない ♥ の ${level===1?13:14} が1枚`}},
   /* ---- 仮置き(敵名・BGM・範囲は未定。tools/sim2.js の仮設定と同じ) ---- */
   {name:'STAGE 4',enemy:'フォース(仮)',cpu:400,bgm:'music/stage3.mp3',
    ranges:[{until:4,min:9,max:11},{until:6,min:9,max:13},{until:Infinity,min:11,max:13}],
-   skill:{cd:3,hp:[300,200,100],len:2,
+   skill:{hp:[300,200,100],len:2,
      cards:(level,turn)=>{const r=level===1?18:20;return [0,1,2].map(()=>({suit:pick(['D','C','S']),rank:r}));},
      desc:level=>`2ラウンドの間、♦♣♠ のランダムな3枚が ${level===1?18:20} になる`}},
   {name:'STAGE 5',enemy:'ラスボス(仮)',cpu:500,bgm:'music/stage3.mp3',
    ranges:[{until:4,min:10,max:13},{until:6,min:11,max:13},{until:Infinity,min:12,max:13}],
-   skill:{cd:3,hp:[400,300,200,100],len:3,
+   skill:{hp:[400,300,200,100],len:3,
      cards:(level,turn)=>{const r=level===1?22:24,w=level===1?17:19,wi=Math.floor(Math.random()*3);
        return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
      desc:level=>`3ラウンドの間、♦♣♠ の ${level===1?22:24} と、相性のない ♥ の ${level===1?17:19} が1枚`}},
 ];
 /* score (Score.md): points earned per stage, spent on the deck-build screen */
-const SCORE={kill:500,three:1000,streak5:2000,streak10:4000,streak15:7000,noDamageClear:10000,onemore:4000,combo:3000,skillBreak:10000,round20:5000,round30:20000,time3m:10000,time2m:20000};
+/* 2026-09-19: scaled to about 0.8x so a build is ~50% affordable at the start of stage 2 and ~90% at stage 3 (Builds.md) */
+const SCORE={kill:400,three:800,streak5:1500,streak10:3500,streak15:6000,noDamageClear:8000,onemore:3500,combo:2500,skillBreak:8000,round20:4000,round30:16000,time3m:8000,time2m:16000};
 /* deck build (DeckBuild.md) */
 const DECK_MIN=20,DECK_MAX_COPIES=3;
 /* points refunded when a card is removed (DeckBuild.md; 10 is read as 1000 from the 100×rank pattern) */
 const REMOVE_REFUND={1:100,2:200,3:300,4:400,5:500,6:600,7:700,8:800,9:900,10:1000,11:11000,12:12000,13:20000};
-const ADD_COST={1:5000,2:2000,3:3000,4:4000,5:5000,6:6000,7:7000,8:8000,9:9000,10:10000,11:11000,12:12000,13:20000};
+/* adding a card: flat 30,000; Q and K 40,000 */
+const ADD_COST={1:30000,2:30000,3:30000,4:30000,5:30000,6:30000,7:30000,8:30000,9:30000,10:30000,11:30000,12:40000,13:40000};
 const SKILLS={
   low2x:{name:'6以下のカードが常に2倍',desc:'6以下のカードは相性に関係なくパワー2倍(有利でも2倍)',cost:30000},
   adv4x:{name:'相性有利で4倍',desc:'相性が有利なカードのパワーが2倍ではなく4倍になる',cost:20000},
@@ -64,6 +66,8 @@ const SKILLS={
   hp:{name:'最大HP +10',desc:'自分の最大HPが+10(5段階まで)。型の完成度とHPをポイントで天秤にかける',levels:[10000,15000,20000,25000,30000]}
 };
 const HP_PER_LEVEL=10;
+/* treasure: some enemy cards carry a chest; beating one adds a random card (3〜K, any suit) to your deck */
+const CHEST_RATE=0.12,CHEST_MIN_RANK=3,CHEST_MAX_RANK=13;
 /* skill patterns on the 3 played cards (normal battle and 1more alike) */
 function skillPatterns(cards,inOneMore,hand){
   const sk=(typeof RUN!=='undefined'&&RUN)?RUN.skills:{};

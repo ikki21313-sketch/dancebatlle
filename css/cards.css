@@ -59,3 +59,5 @@
 .card.skill{box-shadow:0 0 0 2px #ff2a1a,0 0 22px rgba(255,42,26,.75);animation:skillPulse 1s ease-in-out infinite alternate}
 @keyframes skillPulse{to{box-shadow:0 0 0 3px #ff6a5a,0 0 40px rgba(255,42,26,1)}}
 .card.skill .buff-tag{background:#c81414;color:#fff}
+.card .chest-tag{position:absolute;top:-10px;right:-8px;font-family:var(--body);font-weight:900;font-size:10px;letter-spacing:.08em;padding:1px 6px;border-radius:9px;color:#3a2600;background:#f2c100;box-shadow:0 0 10px rgba(242,193,0,.8);white-space:nowrap}
+.card.chest{box-shadow:0 2px 6px rgba(0,0,0,.45),0 0 14px rgba(242,193,0,.6)}
