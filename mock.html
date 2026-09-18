@@ -250,6 +250,23 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 .cutin.last .band::before,.cutin.last .band::after{background:repeating-linear-gradient(90deg,#ff2a1a 0 24px,transparent 24px 48px);opacity:.7;height:6px}
 .cutin.last .txt{color:#fff;text-shadow:0 0 16px #ff2a1a,0 0 48px #ff2a1a,0 0 90px #ff2a1a;font-size:96px}
 .cutin.last .sub{color:#ffb3ad}
+.cutin.enemy .band{background:#8f0f0f;border-top:4px solid #ff4a3a;border-bottom:4px solid #ff4a3a;height:190px}
+.cutin.enemy .band::before,.cutin.enemy .band::after{background:repeating-linear-gradient(-45deg,#111 0 12px,#ff4a3a 12px 24px);opacity:.8;height:8px}
+.cutin.enemy .txt{color:#fff;text-shadow:0 0 14px #ff2a1a,0 0 36px #ff2a1a}
+.cutin.enemy .sub{color:#ffd0cb}
+.cutin.break .band{background:var(--gold)}
+.cutin.break .txt{color:var(--gold-ink)}
+/* enemy skill: DANGER tapes (same mechanics as the 1more tapes, red/black) */
+.omfx.danger .tape{background:#e01b1b;color:#111;text-shadow:0 0 6px rgba(255,255,255,.35)}
+.omfx.danger .tape::before,.omfx.danger .tape::after{background:repeating-linear-gradient(-45deg,#111 0 10px,#e01b1b 10px 20px)}
+.omfx.danger.on .tape{animation-name:slap,dangerGlow}
+@keyframes dangerGlow{from{box-shadow:0 4px 14px rgba(0,0,0,.6),0 0 14px rgba(224,27,27,.35)}to{box-shadow:0 4px 14px rgba(0,0,0,.6),0 0 44px rgba(224,27,27,.95)}}
+.card.skill{box-shadow:0 0 0 2px #ff2a1a,0 0 22px rgba(255,42,26,.75);animation:skillPulse 1s ease-in-out infinite alternate}
+@keyframes skillPulse{to{box-shadow:0 0 0 3px #ff6a5a,0 0 40px rgba(255,42,26,1)}}
+.card.skill .buff-tag{background:#c81414;color:#fff}
+.field.enemy{border-color:#ff4a3a}
+.skill-badge{position:absolute;top:-12px;right:14px;background:#c81414;color:#fff;font-family:var(--num);font-weight:700;font-size:12px;letter-spacing:.14em;padding:2px 10px;border-radius:12px;display:none;box-shadow:0 0 14px rgba(255,42,26,.7)}
+.field.enemy .skill-badge{display:block;animation:vpop .4s cubic-bezier(.2,.9,.3,1.4)}
 
 /* 1more: caution tapes slapped on both sides of the stage */
 .omfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -309,6 +326,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 
   <section class="field" id="field">
     <span class="om-badge">1 MORE</span>
+    <span class="skill-badge" id="skillBadge">ENEMY SKILL</span>
     <div class="lane" id="l0"><span class="idx">1枚目</span><div class="slot" id="c0"></div><div class="verdict" id="v0"></div><div class="slot" id="m0"></div></div>
     <div class="lane" id="l1"><span class="idx">2枚目</span><div class="slot" id="c1"></div><div class="verdict" id="v1"></div><div class="slot" id="m1"></div></div>
     <div class="lane" id="l2"><span class="idx">3枚目</span><div class="slot" id="c2"></div><div class="verdict" id="v2"></div><div class="slot" id="m2"></div></div>
@@ -348,6 +366,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 </div>
 
 <div class="omfx" id="omfx" hidden><div class="side l" id="om-l"></div><div class="side r" id="om-r"></div></div>
+<div class="omfx danger" id="dgfx" hidden><div class="side l" id="dg-l"></div><div class="side r" id="dg-r"></div></div>
 <div class="vignette"></div>
 <div class="fxlayer" id="fxlayer"></div>
 <div class="flashwhite" id="flashwhite"></div>
@@ -383,6 +402,12 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
     <li>3枚すべてに勝ち、かつ出した3枚がすべて違うスートなら <b>1more</b>。好きな3枚を追加で出し、数字がそのままダメージ</li>
     <li>ラウンド後、手札が上限(はじめ6枚)になるまで補充。先にHP0になった方の負け</li>
   </ul>
+  <h2 style="font-size:15px">敵のスキル</h2>
+  <ul>
+    <li>通常ラウンドが4回経過するか、CPUのHPが50減るごと(150/100/50を割ったとき)に、次のラウンドから発動</li>
+    <li>発動中の2ラウンドは、CPUの場が ♦♣♠ の同じ数字になる(1回目13、2回目14、3回目15…)</li>
+    <li>2ラウンド終わると Skill Break! で手札の上限が+1。そのあと4ラウンドのクールタイム</li>
+  </ul>
   <h2 style="font-size:15px">コンボ(同時に出した3枚で発動)</h2>
   <ul>
     <li><b>同じ数字3枚</b> Three Card Revolution! 相手のカードがすべて吹き飛び、3枚とも数字ぶんフルダメージ。そのまま1more</li>
@@ -403,6 +428,9 @@ const SUITS={
 };
 const BEATS={rock:'scis',scis:'papr',papr:'rock'};
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const rankLabel=r=>r<=13?RANKS[r-1]:String(r);
+/* enemy skill: fires after SKILL_CD normal rounds or when CPU HP crosses a SKILL_HP_STEP boundary; lasts SKILL_LEN rounds */
+const SKILL_CD=5,SKILL_LEN=2,SKILL_HP_STEP=50,SKILL_BASE_RANK=13;
 const MAX_ME=30,MAX_CPU=200,HAND=6,LIMIT=10000,BEAT=450;
 /* deck config: hearts, A and 2 are removed for now */
 const DECK_SUITS='DSC',MIN_RANK=3,MAX_RANK=13;
@@ -429,15 +457,16 @@ function setMuted(m){muted=m;bgm.muted=m;fanfare.muted=m;try{localStorage.setIte
 
 /* ---- 1more tapes ---- */
 (function buildTapes(){
-  const base='1MORE! ✦ '.repeat(8);
-  const cfg={l:[[9,-24,5.5],[31,16,7],[55,-9,6.2],[78,27,8]],r:[[7,20,6.8],[29,-14,5.2],[53,12,7.5],[77,-26,6]]};
-  for(const side of 'lr'){const box=$('om-'+side);cfg[side].forEach(([top,rot,spd],i)=>{
-    const t=document.createElement('div');t.className='tape'+(i%2?' rev':'');
-    t.style.cssText=`top:${top}%;--rot:${rot}deg;--spd:${spd}s;--d:${(i*.12).toFixed(2)}s`;
-    t.innerHTML=`<span>${base}${base}</span>`;box.appendChild(t);});}
+  const build=(prefix,text,cfg)=>{const base=text.repeat(8);
+    for(const side of 'lr'){const box=$(prefix+'-'+side);cfg[side].forEach(([top,rot,spd],i)=>{
+      const t=document.createElement('div');t.className='tape'+(i%2?' rev':'');
+      t.style.cssText=`top:${top}%;--rot:${rot}deg;--spd:${spd}s;--d:${(i*.12).toFixed(2)}s`;
+      t.innerHTML=`<span>${base}${base}</span>`;box.appendChild(t);});}};
+  build('om','1MORE! ✦ ',{l:[[9,-24,5.5],[31,16,7],[55,-9,6.2],[78,27,8]],r:[[7,20,6.8],[29,-14,5.2],[53,12,7.5],[77,-26,6]]});
+  build('dg','DANGER!! ',{l:[[20,18,4.8],[44,-22,6],[66,12,5.4],[88,-16,7]],r:[[18,-20,5.6],[42,24,4.6],[64,-10,6.4],[86,20,5]]});
 })();
-function omfxShow(){const e=$('omfx');e.hidden=false;e.classList.remove('off');void e.offsetWidth;e.classList.add('on');}
-function omfxHide(){const e=$('omfx');if(e.hidden)return;e.classList.remove('on');e.classList.add('off');setTimeout(()=>{e.hidden=true;e.classList.remove('off');},450);}
+function omfxShow(id='omfx'){const e=$(id);e.hidden=false;e.classList.remove('off');void e.offsetWidth;e.classList.add('on');}
+function omfxHide(id='omfx'){const e=$(id);if(e.hidden)return;e.classList.remove('on');e.classList.add('off');setTimeout(()=>{e.hidden=true;e.classList.remove('off');},450);}
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function newDeck(){const d=[];for(const s of DECK_SUITS)for(let r=MIN_RANK;r<=MAX_RANK;r++)d.push({id:++uid,suit:s,rank:r});return shuffle(d);}
@@ -476,7 +505,7 @@ async function runCombo(k,my){
     for(const suit of 'DSC'){const cs=bySuit(suit);if(!cs.length)continue;
       const low=cs.reduce((a,b)=>b.rank<a.rank?b:a);
       note(`${SUITS[suit].sym}の一番低い ${cardName(low)} → K`);
-      low.flash=true;low.fxLabel=`${RANKS[low.rank-1]} → K`;low.rank=13;low.buff='sword';hit.push(`${cardName(low)}`);
+      low.flash=true;low.fxLabel=`${rankLabel(low.rank)} → K`;low.rank=13;low.buff='sword';hit.push(`${cardName(low)}`);
       render();await wait(BEAT*2.6);if(my!==seq)return;settle(low);}
     if(!hit.length){note('対象の手札がありません');render();await wait(BEAT*2);}
     log(`コンボ! Sword Combo! K化: ${hit.length?hit.join('  '):'なし'}`,'gold');
@@ -505,7 +534,7 @@ async function runCombo(k,my){
       note(`一番枚数が少ないスート: ${targets.map(x=>SUITS[x.suit].sym+'×'+min).join(' と ')} → すべて K`);
       render();await wait(BEAT*2);if(my!==seq)return;
       for(const t of targets){
-        for(const c of t.cs){c.flash=true;c.fxLabel=`${RANKS[c.rank-1]} → K`;c.rank=13;c.buff='clover';hit.push(cardName(c));}
+        for(const c of t.cs){c.flash=true;c.fxLabel=`${rankLabel(c.rank)} → K`;c.rank=13;c.buff='clover';hit.push(cardName(c));}
         note(`${SUITS[t.suit].sym}の ${t.cs.length} 枚がすべて K に`);
         render();await wait(BEAT*2.8);if(my!==seq)return;settle(...t.cs);}
     }else{note('対象の手札がありません');render();await wait(BEAT*2);}
@@ -518,7 +547,27 @@ async function runCombo(k,my){
   S.phase=prev;render();
 }
 function cpuDeal(){const max=S.round<=EARLY_ROUNDS?EARLY_MAX_RANK:MAX_RANK;return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:MIN_RANK+Math.floor(Math.random()*(max-MIN_RANK+1))}));}
-function cardName(c){return SUITS[c.suit].sym+RANKS[c.rank-1];}
+function cardName(c){return SUITS[c.suit].sym+rankLabel(c.rank);}
+function skillDeal(){const r=SKILL_BASE_RANK+S.skillLevel-1;return 'DCS'.split('').map(suit=>({id:++uid,suit,rank:r,skill:true}));}
+async function maybeEnemySkill(my){
+  if(S.skillActive)return;
+  S.skillCd--;
+  if(S.skillCd>0&&!S.hpTrigger)return;
+  S.hpTrigger=false;S.skillActive=true;S.skillRounds=SKILL_LEN;S.skillLevel++;
+  const r=SKILL_BASE_RANK+S.skillLevel-1;
+  log(`敵のスキル発動! ${SKILL_LEN}ラウンドの間、相手の場は ♦♣♠ の ${r}`,'bad');
+  omfxShow('dgfx');render();
+  await cutIn('Enemy Skill Activation!','enemy',5,`相手のカードが ${SKILL_LEN}ラウンドの間 すべて ${r} になる`);
+}
+async function endEnemySkillIfDue(my){
+  if(!S.skillActive)return;
+  S.skillRounds--;
+  if(S.skillRounds>0)return;
+  S.skillActive=false;S.skillCd=SKILL_CD;S.handMax+=1;
+  omfxHide('dgfx');render();
+  log(`Skill Break! 相手のスキルが切れた。手札上限が ${S.handMax} 枚に`,'gold');
+  await cutIn('Skill Break!','break',4,`相手のスキルが切れた。手札の上限 +1 → ${S.handMax}枚`);
+}
 const SUIT_ORDER={D:0,S:1,C:2,H:3};
 function sortHand(){S.hand.sort((a,b)=>SUIT_ORDER[a.suit]-SUIT_ORDER[b.suit]||b.rank-a.rank);}
 
@@ -535,12 +584,12 @@ function cutIn(text,style='',beats=2.4,sub=''){
 
 /* ---- game flow ---- */
 function freshState(){
-  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false};
+  S={me:MAX_ME,cpu:MAX_CPU,deck:newDeck(),discard:[],hand:[],handMax:HAND,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,skillActive:false,skillRounds:0,skillLevel:0,skillCd:SKILL_CD,hpTrigger:false,nextHpTrigger:MAX_CPU-SKILL_HP_STEP};
   refill();
 }
 async function newGame(){
   const my=++seq;
-  stopTimer();omfxHide();stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
+  stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();$('comboNote').hidden=true;setSlowmo(false);document.querySelectorAll('.lane.focus').forEach(l=>l.classList.remove('focus'));freshState();
   $('log').innerHTML='';$('over').classList.remove('show');
   render();
   await cutIn('Get Ready?','alt');
@@ -552,8 +601,12 @@ async function newGame(){
 }
 async function startRound(){
   const my=seq;
-  S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.cpuField=cpuDeal();S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;
-  log(`ラウンド ${S.round}  CPUの場: ${S.cpuField.map(cardName).join('  ')}`,'r');
+  S.round++;S.onemore=false;S.revolution=false;S.blown=false;S.picked=[];S.results=[null,null,null];S.phase='deal';S.dealt=0;S.cpuField=[];
+  log(`ラウンド ${S.round}`,'r');
+  render();
+  await maybeEnemySkill(my);if(my!==seq)return;
+  S.cpuField=S.skillActive?skillDeal():cpuDeal();
+  log(`　CPUの場: ${S.cpuField.map(cardName).join('  ')}${S.skillActive?'  [敵スキル 残り'+S.skillRounds+'ラウンド]':''}`);
   render();
   await wait(BEAT*.5);
   for(let i=0;i<3;i++){S.dealt=i+1;sfx('flip');render();await wait(BEAT);if(my!==seq)return;}
@@ -636,6 +689,7 @@ async function commit(){
       const tier=dmgTier(r.dmgCpu);
       await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal});if(my!==seq)return;
       S.cpu=Math.max(0,S.cpu-r.dmgCpu);
+      while(S.cpu>0&&S.cpu<=S.nextHpTrigger&&S.nextHpTrigger>0){if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${S.nextHpTrigger} を割った。次のラウンドで敵のスキルが発動`,'bad');}S.nextHpTrigger-=SKILL_HP_STEP;}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
       if(lethal){flash('big');quake(16);}
       else if(tier>=4){flash('red');quake(12);}
@@ -676,6 +730,7 @@ async function commit(){
   }
   if(oneMore)omfxHide();
   await wait(BEAT);if(my!==seq)return;
+  await endEnemySkillIfDue(my);if(my!==seq)return;
   refill();
   startRound();
 }
@@ -749,11 +804,12 @@ function log(t,cls){const li=document.createElement('li');li.textContent=t;if(cl
 function cardEl(c,small){
   const s=SUITS[c.suit],d=document.createElement('div');
   d.className='card '+s.cls+(small?' sm':'');
-  const rk=RANKS[c.rank-1];
+  const rk=rankLabel(c.rank);if(c.skill)d.classList.add('skill');
   d.innerHTML=`<div class="corner">${rk}<span>${s.sym}</span></div>`
     +`<div class="mid"><span class="hand-ico">${s.ico}</span><span class="lbl">${s.label}</span></div>`
     +`<div class="corner bottom">${rk}<span>${s.sym}</span></div>`;
   if(c.buff){const b=document.createElement('span');b.className='buff-tag';b.textContent={sword:'⚔ K化',copy:'◆ 複製',clover:'♣ K化'}[c.buff]||c.buff;d.appendChild(b);}
+  if(c.skill){const b=document.createElement('span');b.className='buff-tag';b.textContent='SKILL';d.appendChild(b);}
   if(c.spawn)d.classList.add('spawn');else if(c.flash)d.classList.add('buffed');else if(c.done)d.classList.add('buffdone');
   if(c.fxLabel){const f=document.createElement('span');f.className='fx-label'+(c.done?' static':'');f.textContent=c.fxLabel;d.appendChild(f);}
   return d;
@@ -765,7 +821,7 @@ function render(){
   const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/MAX_CPU*100)+'%';mb.style.width=(S.me/MAX_ME*100)+'%';
   cb.classList.toggle('low',S.cpu<=MAX_CPU*.3);mb.classList.toggle('low',S.me<=MAX_ME*.3);
   const dealing=S.phase==='deal';
-  $('field').classList.toggle('om',S.onemore);
+  $('field').classList.toggle('om',S.onemore);$('field').classList.toggle('enemy',!!S.skillActive);
   for(let i=0;i<3;i++){
     const c=$('c'+i),m=$('m'+i),v=$('v'+i),lane=$('l'+i);
     c.innerHTML='';m.innerHTML='';c.className='slot';m.className='slot';
@@ -849,6 +905,8 @@ function start(data){
     $('log').innerHTML='';
     bgmWanted=true;
     if(S.phase==='onemore')omfxShow();
+    if(S.skillActive)omfxShow('dgfx');
+    if(S.skillCd==null){S.skillActive=false;S.skillRounds=0;S.skillLevel=0;S.skillCd=SKILL_CD;S.hpTrigger=false;S.nextHpTrigger=MAX_CPU-SKILL_HP_STEP;}
     if(S.phase==='select'||S.phase==='onemore'){
       if(data.pausedLeft!=null){pausedLeft=data.pausedLeft;renderTimer(pausedLeft);render();}
       else{startTimer(Math.max(1000,(S.deadline||0)-Date.now()));render();}
