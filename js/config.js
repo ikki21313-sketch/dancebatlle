@@ -47,9 +47,10 @@ const SKILLS={
   chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000}
 };
 function baseDeckCounts(){const d={};for(const s of DECK_SUITS)for(let r=PLAYER_MIN_RANK;r<=PLAYER_MAX_RANK;r++)d[s+r]=1;return d;}
-/* battle cadence per card, in beats (clash → number pops → flies → hold). Fixed so 1,2,3 land on a steady rhythm.
-   normal: 2.0 beats per card. onemore: 1.65 beats (a touch quicker). Last Attack multiplies everything by 3. */
-const TEMPO={normal:{clash:.55,pop:.45,fly:.35,hold:.65},onemore:{clash:.45,pop:.4,fly:.3,hold:.5}};
+/* battle cadence: ONE beat per card (タン・タン・タン). The strike lands at `clash` beats in; damage is applied
+   right then (HP, shake, sound). The number's pop/fly is only afterglow and overlaps the next card.
+   normal: 1 beat per card, onemore: 0.85 beat. Last Attack multiplies everything by 3 and waits for the number. */
+const TEMPO={normal:{clash:.4,beat:1,pop:.25,fly:.3},onemore:{clash:.35,beat:.85,pop:.22,fly:.26}};
 /* selection time limit: starts at LIMIT_START, drops LIMIT_STEP every HEAT_EVERY rounds (Heat Up!), never below LIMIT_MIN */
 const LIMIT_START=30000,LIMIT_STEP=5000,LIMIT_MIN=10000,HEAT_EVERY=2;
 /* deck config: hearts, A and 2 are removed for now */

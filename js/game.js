@@ -191,14 +191,15 @@ async function commit(){
     /* beat 1: the two cards move in */
     S.clash=i;render();
     await wait(BEAT*T.clash*slow);if(my!==seq)return;
-    /* impact: show verdict, then the number flies to the target's HP */
+    /* impact = damage, in the same beat: HP drops, shake, sound. The number's flight is afterglow (not awaited) */
     S.results[i]=r;S.clash=-1;
     if(oneMore||lethal){sfx('slash');slashFx(i);quake(lethal?10:6);}
     if(r.win)wins++;
-    spark(i,oneMore||lethal);render();
+    spark(i,oneMore||lethal);
     if(r.dmgCpu){
       const tier=dmgTier(r.dmgCpu);
-      await flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal,popBeats:T.pop,flyBeats:T.fly});if(my!==seq)return;
+      const flight=flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal,popBeats:T.pop,flyBeats:T.fly});
+      if(lethal){await flight;if(my!==seq)return;}   /* Last Attack: the slow number is the show, wait for it */
       S.cpu=Math.max(0,S.cpu-r.dmgCpu);sfxDamage(r.dmgCpu);S.roundDmg+=r.dmgCpu;
       while(S.cpu>0&&S.hpTriggers.length&&S.cpu<=S.hpTriggers[0]){const th=S.hpTriggers.shift();if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${th} を割った。次のラウンドで敵のスキルが発動`,'bad');}}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
@@ -206,15 +207,14 @@ async function commit(){
       else if(tier>=4){flash('red');quake(12);}
       else if(tier>=3){flash('mid');quake(9);}
       else if(tier>=2)quake(6);
-      render();
     }
     if(r.dmgMe){
       const tier=dmgTier(r.dmgMe);
-      await flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true,popBeats:T.pop,flyBeats:T.fly});if(my!==seq)return;
+      flyDamage($('c'+i),$('meHp'),r.dmgMe,tier,{toMe:true,popBeats:T.pop,flyBeats:T.fly});
       S.me=Math.max(0,S.me-r.dmgMe);sfxDamage(r.dmgMe);S.tookDamage=true;S.streak=0;fx('meBox',tier>=2?'hitbig flash':'hit flash');if(tier>=3)flash('mid');
-      render();
     }
-    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');render();}
+    if(r.heal&&S.me>0){S.me=Math.min(MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,oneMore?'heal big':'heal');}
+    render();
     if(lethal){await wait(BEAT*1.6);$('l'+i).classList.remove('focus');setSlowmo(false);}
     const who=c?`${cardName(p)}(${r.pv}) vs ${cardName(c)}(${r.cv})`:`${cardName(p)}(${r.pv})`;
     const tag=r.mul?' ['+r.mul+']':'';
@@ -229,9 +229,11 @@ async function commit(){
       else if(S.streak===15)addScore('streak15','ノーダメージで15枚撃破');
     }
     if(r.heal)log(`　♥ HPが ${r.heal} 回復 (${S.me})`,'gold');
-    await wait(BEAT*T.hold*(lethal?slow:1));if(my!==seq)return;
+    /* rest of this card's beat */
+    await wait(BEAT*(T.beat-T.clash)*(lethal?slow:1));if(my!==seq)return;
     if(S.me<=0||S.cpu<=0){dead=true;break;}
   }
+  await wait(BEAT*.6);if(my!==seq)return;   /* let the last hit settle before the round wraps up */
   const played=S.picked.slice();
   for(const p of S.picked){S.hand.splice(S.hand.indexOf(p),1);S.discard.push(p);}
   S.picked=[];
