@@ -58,9 +58,9 @@ function skillPatterns(cards, inOneMore, hand, sk) {
 }
 function applyCombo(S, k, rest) {
   const bySuit = s => rest.filter(c => c.suit === s);
-  if (k === 'sword') { for (const s of SUITS) { const cs = bySuit(s); if (cs.length) cs.reduce((a, b) => b.rank < a.rank ? b : a).rank = 13; } S.handMax++; }
+  if (k === 'sword') { for (const s of SUITS) { const cs = bySuit(s); if (cs.length) { const c = cs.reduce((a, b) => b.rank < a.rank ? b : a); if (c.orig == null) c.orig = c.rank; c.rank = 13; } } S.handMax++; }
   else if (k === 'diamond') { for (const s of SUITS) { const cs = bySuit(s); if (cs.length) { const h = cs.reduce((a, b) => b.rank > a.rank ? b : a); S.hand.push({ suit: s, rank: h.rank }); } } S.handMax++; }
-  else if (k === 'clover') { const g = SUITS.split('').map(s => bySuit(s)).filter(cs => cs.length); if (g.length) { const min = Math.min(...g.map(cs => cs.length)); g.filter(cs => cs.length === min).forEach(cs => cs.forEach(c => c.rank = 13)); } S.handMax++; }
+  else if (k === 'clover') { const g = SUITS.split('').map(s => bySuit(s)).filter(cs => cs.length); if (g.length) { const min = Math.min(...g.map(cs => cs.length)); g.filter(cs => cs.length === min).forEach(cs => cs.forEach(c => { if (c.orig == null) c.orig = c.rank; c.rank = 13; })); } S.handMax++; }
 }
 function draw(S) { if (!S.deck.length) { if (!S.discard.length) return null; S.deck = shuffle(S.discard); S.discard = []; } return S.deck.pop(); }
 function refill(S) { while (S.hand.length < S.handMax) { const c = draw(S); if (!c) break; S.hand.push(c); } }
@@ -146,7 +146,7 @@ function playStage(st, deckCounts, sk, optimal) {
         while (S.cpu > 0 && S.hpTriggers.length && S.cpu <= S.hpTriggers[0]) { S.hpTriggers.shift(); if (!S.skillActive) S.hpTrigger = true; }
         if (S.me <= 0 || S.cpu <= 0) { dead = true; break; }
       }
-      for (const c of trio) { S.hand.splice(S.hand.indexOf(c), 1); S.discard.push(c); }
+      for (const c of trio) { S.hand.splice(S.hand.indexOf(c), 1); if (c.orig != null) { c.rank = c.orig; delete c.orig; } S.discard.push(c); }
       if (!oneMore && roundKills === 3) add('three');
       if (dead) break;
       let again = false;

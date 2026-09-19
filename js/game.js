@@ -33,7 +33,7 @@ async function runCombo(k,my){
     for(const suit of 'DSC'){const cs=bySuit(suit);if(!cs.length)continue;
       const low=cs.reduce((a,b)=>b.rank<a.rank?b:a);
       note(`${SUITS[suit].sym}の一番低い ${cardName(low)} → K`);
-      low.flash=true;low.fxLabel=`${rankLabel(low.rank)} → K`;low.rank=13;low.buff='sword';hit.push(`${cardName(low)}`);
+      low.flash=true;low.fxLabel=`${rankLabel(low.rank)} → K`;if(low.origRank==null)low.origRank=low.rank;low.rank=13;low.buff='sword';hit.push(`${cardName(low)}`);
       render();await wait(BEAT*2.6);if(my!==seq)return;settle(low);}
     if(!hit.length){note('対象の手札がありません');render();await wait(BEAT*2);}
     log(`コンボ! Sword Combo! K化: ${hit.length?hit.join('  '):'なし'}`,'gold');addScore('combo','緑コンボ (Sword)');
@@ -62,7 +62,7 @@ async function runCombo(k,my){
       note(`一番枚数が少ないスート: ${targets.map(x=>SUITS[x.suit].sym+'×'+min).join(' と ')} → すべて K`);
       render();await wait(BEAT*2);if(my!==seq)return;
       for(const t of targets){
-        for(const c of t.cs){c.flash=true;c.fxLabel=`${rankLabel(c.rank)} → K`;c.rank=13;c.buff='clover';hit.push(cardName(c));}
+        for(const c of t.cs){c.flash=true;c.fxLabel=`${rankLabel(c.rank)} → K`;if(c.origRank==null)c.origRank=c.rank;c.rank=13;c.buff='clover';hit.push(cardName(c));}
         note(`${SUITS[t.suit].sym}の ${t.cs.length} 枚がすべて K に`);
         render();await wait(BEAT*2.8);if(my!==seq)return;settle(...t.cs);}
     }else{note('対象の手札がありません');render();await wait(BEAT*2);}
@@ -240,7 +240,7 @@ async function commit(){
   }
   await wait(BEAT*.6);if(my!==seq)return;   /* let the last hit settle before the round wraps up */
   const played=S.picked.slice();
-  for(const p of S.picked){S.hand.splice(S.hand.indexOf(p),1);S.discard.push(p);}
+  for(const p of S.picked){S.hand.splice(S.hand.indexOf(p),1);discardCard(p);}
   S.picked=[];
   if(!oneMore&&roundKills===3)addScore('three','3枚連続で撃破');
   if(dead){endRoundScoring();gameOver();return;}
@@ -310,6 +310,8 @@ async function gameOver(){
   $('over').classList.add('show');
 }
 
+/* a K-converted card (Sword/Clover) goes back to its original number once it hits the discard pile */
+function discardCard(p){if(p.origRank!=null){p.rank=p.origRank;delete p.origRank;delete p.buff;}S.discard.push(p);}
 /* 1more skip: end the round without playing the 1more (keeps the hand for later) */
 async function skipOneMore(){
   if(S.phase!=='onemore')return;
