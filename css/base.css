@@ -11,6 +11,8 @@
   --beat:450ms;
 }
 *{box-sizing:border-box}
+/* スマホ: カードを続けてタップしたときのダブルタップ拡大を止める(ピンチでの拡大は残す)。タップ時の灰色のハイライトも消す */
+html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--felt-deep);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding:0 16px;padding-block:16px 48px;overflow-x:hidden}
 .app{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1}
 h1,h2{margin:0}

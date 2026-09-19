@@ -15,6 +15,7 @@ const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル�
 const HP_LV = Number(opt('hp') || 0);
 const RUN_MODE = args.includes('--run');
 const CARRY_HP = !args.includes('--nocarry');   // 通しモード: HPをステージ間で引き継ぐ(現行ルール)。--nocarry で毎ステージ全回復(旧ルール)
+const TRIM = !args.includes('--notrim');   // 通しモード: 買い物のあと、型のデッキに無いカードを低い順に外して20枚まで絞る(外すのは無料)。--notrim で外さない
 const HP_FIRST = Number(opt('hpFirst') || 0);   // 通しモード: 型の買い物より先に HP を n 段階買う
 const SCORE_MUL = Number(opt('scoreMul') || 1);   // 調整用: 全スコアの倍率
 const CHEST_RATE = Number(opt('chest') || 0.12);
@@ -209,13 +210,26 @@ const SHOP = {
 };
 const itemCost = ([kind, k]) => kind === 'skill' ? SK[k] : cardCost(+k.slice(1));
 const applyItem = (deck, sk, [kind, k]) => { if (kind === 'skill') { if (k.startsWith('draw')) sk.draw = (sk.draw || 0) + 1; else if (k.startsWith('hp')) sk.hp = (sk.hp || 0) + 1; else sk[k] = 1; } else deck[k] = (deck[k] || 0) + 1; };
+// 型の完成デッキ(BUILDS[name].deck)に無い、または多すぎるカードを、数字の低い順に外す。20枚(DECK_MIN)は割らない。宝箱で拾ったカードも対象
+const DECK_MIN = 20;
+function trimDeck(deck, target) {
+  let total = Object.values(deck).reduce((a, b) => a + b, 0), removed = 0;
+  for (let rank = 1; rank <= 13 && total > DECK_MIN; rank++) {
+    for (let again = true; again && total > DECK_MIN;) { again = false;
+      // 同じ数字の中では、いまデッキに多いスートから外す(スートの偏りを作らない)
+      const suitTotal = s => Object.keys(deck).reduce((a, k) => a + (k[0] === s ? deck[k] : 0), 0);
+      const cands = [...SUITS].filter(s => (deck[s + rank] || 0) > (target[s + rank] || 0)).sort((a, b) => suitTotal(b) - suitTotal(a));
+      if (cands.length) { deck[cands[0] + rank]--; total--; removed++; again = true; } }
+  }
+  return removed;
+}
 function playRun(name, optimal) {
   const list = SHOP[name], total = list.reduce((a, it) => a + itemCost(it), 0);
   const deck = { ...BASE }, sk = { hp: 0 }; let pts = 0, bought = 0, i = 0, hp = ME_HP;
-  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [] };
+  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [], deckSize: [] };
   const buyHp = (max) => { for (const h of ['hp1', 'hp2', 'hp3'].slice(sk.hp || 0, max)) { if (pts < SK[h]) break; pts -= SK[h]; sk.hp++; hp += 10; } };
   for (let s = 0; s < STAGES.length; s++) {
-    out.completion.push(bought / total); out.points.push(pts); out.hp.push(hp);
+    out.completion.push(bought / total); out.points.push(pts); out.hp.push(hp); out.deckSize.push(Object.values(deck).reduce((a, b) => a + b, 0));
     const r = playStage(STAGES[s], deck, sk, optimal, CARRY_HP ? hp : undefined);
     if (!r.win) break;
     out.stagesCleared = s + 1; pts += r.pts; out.earned.push(r.pts); if (CARRY_HP) hp = r.me;
@@ -224,13 +238,14 @@ function playRun(name, optimal) {
     while (i < list.length && pts >= itemCost(list[i])) { pts -= itemCost(list[i]); bought += itemCost(list[i]); applyItem(deck, sk, list[i]); i++; }
     // leftover: buy HP levels (up to 3) once the build is complete
     if (i >= list.length) buyHp(3);
+    if (TRIM) trimDeck(deck, BUILDS[name].deck);
   }
   return out;
 }
 if (RUN_MODE) {
-  console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE} HP引き継ぎ=${CARRY_HP ? 'あり' : 'なし'} HP先買い=${HP_FIRST}段階`);
+  console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE} HP引き継ぎ=${CARRY_HP ? 'あり' : 'なし'} HP先買い=${HP_FIRST}段階 低いカードを外す=${TRIM ? 'あり' : 'なし'}`);
   console.log('目標: ビルド完成率 S2開始 50% / S3開始 80% / S4以降 90〜100%。完成率 = 買い物リストの金額ベース、そのステージに到達したランの平均\n');
-  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均'].join('\t'));
+  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均', '開始時デッキ枚数の平均'].join('\t'));
   for (const name of Object.keys(SHOP)) {
     if (ONLY && !name.includes(ONLY)) continue;
     for (const [pname, optimal] of policies) {
@@ -239,7 +254,8 @@ if (RUN_MODE) {
       const total = SHOP[name].reduce((a, it) => a + itemCost(it), 0);
       const earnedAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.earned.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.earned[s], 0) / rs.length / 1000) + 'k' : '-'; });
       const hpAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.hp.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.hp[s], 0) / rs.length) : '-'; });
-      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' ')].join('	'));
+      const deckAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.deckSize.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.deckSize[s], 0) / rs.length) : '-'; });
+      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' '), deckAvg.join(' ')].join('	'));
     }
   }
   process.exit(0);
