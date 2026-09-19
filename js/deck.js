@@ -2,7 +2,9 @@
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function newDeck(){const counts=(typeof RUN!=='undefined'&&RUN)?RUN.deck:baseDeckCounts();const d=[];for(const k in counts){const suit=k[0],rank=+k.slice(1);for(let i=0;i<counts[k];i++)d.push({id:++uid,suit,rank});}return shuffle(d);}
 function drawOne(){if(!S.deck.length){if(!S.discard.length)return null;S.deck=shuffle(S.discard);S.discard=[];}return S.deck.pop();}
-function refill(){while(S.hand.length<S.handMax){const c=drawOne();if(!c)break;S.hand.push(c);}sortHand();}
+/* Triple Ace: while the skill is owned, aces do not count toward the hand limit (they wait in the hand without crowding it out) */
+function handCount(){const free=typeof RUN!=='undefined'&&RUN&&RUN.skills.tripleAce;return free?S.hand.filter(c=>c.rank!==1).length:S.hand.length;}
+function refill(){while(handCount()<S.handMax){const c=drawOne();if(!c)break;S.hand.push(c);}sortHand();}
 /* combos: what do the 3 played cards form? */
 function detectCombo(cards){
   if(cards.length!==3)return null;

@@ -16,7 +16,9 @@ const HP_LV = Number(opt('hp') || 0);
 const RUN_MODE = args.includes('--run');
 const CARRY_HP = !args.includes('--nocarry');   // 通しモード: HPをステージ間で引き継ぐ(現行ルール)。--nocarry で毎ステージ全回復(旧ルール)
 const TRIM = !args.includes('--notrim');   // 通しモード: 買い物のあと、型のデッキに無いカードを低い順に外して20枚まで絞る(外すのは無料)。--notrim で外さない
-const HP_FIRST = Number(opt('hpFirst') || 0);   // 通しモード: 型の買い物より先に HP を n 段階買う
+const HP_FIRST = Number(opt('hpFirst') || 0);
+// トリプルエース型の調整用: --aceCost Aの購入額 / --taCost スキルの額 / --taGift スキル購入で ♦A♣A♠A を1組もらえる
+const ACE_COST = opt('aceCost') != null ? Number(opt('aceCost')) : null, TA_COST = opt('taCost') != null ? Number(opt('taCost')) : null, TA_GIFT = args.includes('--taGift'), TA_LONG = args.includes('--taLong'), TA_FREE = !args.includes('--noTaFree');   // トリプルエース習得中、Aは手札上限に数えない(現行ルール)。--noTaFree で旧ルール   // --taLong: 買い物リストを A 9枚まで伸ばす   // 通しモード: 型の買い物より先に HP を n 段階買う
 const SCORE_MUL = Number(opt('scoreMul') || 1);   // 調整用: 全スコアの倍率
 const CHEST_RATE = Number(opt('chest') || 0.12);
 // S3 調整用: --s3p 威力(1回目) --s3w 白の威力 --s3len 持続 --s3cd CT --s3hp 敵HP --s3lo 7T〜の下限
@@ -67,7 +69,7 @@ function applyCombo(S, k, rest) {
   else if (k === 'clover') { const g = SUITS.split('').map(s => bySuit(s)).filter(cs => cs.length); if (g.length) { const min = Math.min(...g.map(cs => cs.length)); g.filter(cs => cs.length === min).forEach(cs => cs.forEach(c => { if (c.orig == null) c.orig = c.rank; c.rank = 13; })); } S.handMax++; }
 }
 function draw(S) { if (!S.deck.length) { if (!S.discard.length) return null; S.deck = shuffle(S.discard); S.discard = []; } return S.deck.pop(); }
-function refill(S) { while (S.hand.length < S.handMax) { const c = draw(S); if (!c) break; S.hand.push(c); } }
+function refill(S) { while ((S.aceFree ? S.hand.filter(c => c.rank !== 1).length : S.hand.length) < S.handMax) { const c = draw(S); if (!c) break; S.hand.push(c); } }
 function cpuDeal(S, st) { const rg = st.ranges.find(r => S.round <= r[0]); const lo = Math.min(13, rg[1] + SHIFT), hi = Math.min(13, rg[2] + SHIFT); return [0, 1, 2].map(() => ({ suit: SUITS[rnd(3)], rank: lo + rnd(hi - lo + 1), chest: rng() < CHEST_RATE })); }
 
 // ---------------- policies ----------------
@@ -124,7 +126,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
   const deck = []; for (const k in deckCounts) for (let i = 0; i < deckCounts[k]; i++) deck.push({ suit: k[0], rank: +k.slice(1) });
   const S = { me: startHp ?? (ME_HP + 10 * (sk.hp ?? HP_LV)), cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
     skillActive: false, skillRounds: 0, skillLevel: 0, hpTrigger: false, hpTriggers: st.skill.hp.slice().sort((a, b) => b - a),
-    pts: 0, streak: 0, tookDamage: false, chests: [] };
+    pts: 0, streak: 0, tookDamage: false, chests: [], taFires: 0, aceFree: TA_FREE && !!sk.tripleAce };
   const add = k => { S.pts += SCORE[k] * SCORE_MUL; };
   refill(S);
   while (S.round < 60) {
@@ -140,6 +142,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
       const suitC = suitCombo(trio);
       if (suitC) applyCombo(S, suitC, rest);
       const pat = skillPatterns(trio, oneMore, S.hand, sk); if (pat.triple7) triple7Ready = true;
+      if (sk.tripleAce && trio.every(c => c.rank === 1) && new Set(trio.map(c => c.suit)).size === 3) S.taFires++;
       let wins = 0;
       if (suitC) add('combo');
       for (let i = 0; i < 3; i++) {
@@ -171,7 +174,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
   }
   const win = S.cpu <= 0;
   if (win) { if (!S.tookDamage) add('noDamageClear'); add(optimal ? 'time2m' : 'time3m'); }
-  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests, me: S.me };
+  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests, me: S.me, taFires: S.taFires };
 }
 
 // ---------------- builds ----------------
@@ -197,8 +200,8 @@ const BUILDS = {
 const pct = x => (x * 100).toFixed(0).padStart(3) + '%';
 const policies = POLICY === 'all' ? [['最適', true], ['ミス' + Math.round(MISTAKE * 100) + '%', false]] : [[POLICY, POLICY === 'optimal']];
 // ---------------- run mode: whole runs with purchases ----------------
-const CARD = 30000, CARD_QK = 40000, cardCost = r => (r >= 12 ? CARD_QK : CARD);
-const SK = { low2x: 50000, adv4x: 80000, draw1: 50000, draw2: 80000, draw3: 100000, chain: 30000, tripleAce: 60000, triple7: 30000, royal: 10000, special: 30000, hp1: 10000, hp2: 15000, hp3: 20000 };
+const CARD = 30000, CARD_QK = 40000, cardCost = r => (r === 1 && ACE_COST != null ? ACE_COST : r >= 12 ? CARD_QK : CARD);
+const SK = { low2x: 50000, adv4x: 80000, draw1: 50000, draw2: 80000, draw3: 100000, chain: 30000, tripleAce: TA_COST ?? 60000, triple7: 30000, royal: 10000, special: 30000, hp1: 10000, hp2: 15000, hp3: 20000 };
 // 買い物リスト: 上から順に、ポイントが足りるものを買う(型の完成 = リスト全部)
 const SHOP = {
   'ロー2倍型(6以下×2)': [['skill', 'low2x'], ['card', 'D5'], ['card', 'S5'], ['card', 'C5'], ['skill', 'draw1'], ['card', 'D6'], ['card', 'S6'], ['card', 'C6']],
@@ -206,10 +209,10 @@ const SHOP = {
   'ドロー型(+3・連鎖)': [['skill', 'draw1'], ['skill', 'draw2'], ['skill', 'chain'], ['skill', 'draw3'], ['card', 'D10'], ['card', 'S10'], ['card', 'C10']],
   'ロイヤル型(JQK)': [['skill', 'royal'], ['card', 'D11'], ['card', 'D12'], ['card', 'D13'], ['skill', 'chain'], ['card', 'S11'], ['card', 'S12']],
   'トリプル7型': [['skill', 'triple7'], ['card', 'D7'], ['card', 'S7'], ['card', 'C7'], ['skill', 'special'], ['skill', 'chain'], ['card', 'D7']],
-  'トリプルエース型': [['skill', 'tripleAce'], ['card', 'D1'], ['card', 'S1'], ['card', 'C1'], ['skill', 'draw1'], ['card', 'D1'], ['card', 'S1']],
+  'トリプルエース型': [['skill', 'tripleAce'], ...(TA_GIFT ? [] : [['card', 'D1'], ['card', 'S1'], ['card', 'C1']]), ...(TA_LONG ? [['card', 'D1'], ['card', 'S1'], ['card', 'C1'], ['skill', 'draw1'], ['card', 'D1'], ['card', 'S1'], ['card', 'C1']] : [['skill', 'draw1'], ['card', 'D1'], ['card', 'S1']])],
 };
 const itemCost = ([kind, k]) => kind === 'skill' ? SK[k] : cardCost(+k.slice(1));
-const applyItem = (deck, sk, [kind, k]) => { if (kind === 'skill') { if (k.startsWith('draw')) sk.draw = (sk.draw || 0) + 1; else if (k.startsWith('hp')) sk.hp = (sk.hp || 0) + 1; else sk[k] = 1; } else deck[k] = (deck[k] || 0) + 1; };
+const applyItem = (deck, sk, [kind, k]) => { if (kind === 'skill') { if (k.startsWith('draw')) sk.draw = (sk.draw || 0) + 1; else if (k.startsWith('hp')) sk.hp = (sk.hp || 0) + 1; else { sk[k] = 1; if (k === 'tripleAce' && TA_GIFT) for (const a of ['D1', 'S1', 'C1']) deck[a] = (deck[a] || 0) + 1; } } else deck[k] = (deck[k] || 0) + 1; };
 // 型の完成デッキ(BUILDS[name].deck)に無い、または多すぎるカードを、数字の低い順に外す。20枚(DECK_MIN)は割らない。宝箱で拾ったカードも対象
 const DECK_MIN = 20;
 function trimDeck(deck, target) {
@@ -226,11 +229,12 @@ function trimDeck(deck, target) {
 function playRun(name, optimal) {
   const list = SHOP[name], total = list.reduce((a, it) => a + itemCost(it), 0);
   const deck = { ...BASE }, sk = { hp: 0 }; let pts = 0, bought = 0, i = 0, hp = ME_HP;
-  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [], deckSize: [] };
+  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [], deckSize: [], taFires: [] };
   const buyHp = (max) => { for (const h of ['hp1', 'hp2', 'hp3'].slice(sk.hp || 0, max)) { if (pts < SK[h]) break; pts -= SK[h]; sk.hp++; hp += 10; } };
   for (let s = 0; s < STAGES.length; s++) {
     out.completion.push(bought / total); out.points.push(pts); out.hp.push(hp); out.deckSize.push(Object.values(deck).reduce((a, b) => a + b, 0));
     const r = playStage(STAGES[s], deck, sk, optimal, CARRY_HP ? hp : undefined);
+    out.taFires.push(r.taFires);
     if (!r.win) break;
     out.stagesCleared = s + 1; pts += r.pts; out.earned.push(r.pts); if (CARRY_HP) hp = r.me;
     buyHp(HP_FIRST);
@@ -245,7 +249,7 @@ function playRun(name, optimal) {
 if (RUN_MODE) {
   console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE} HP引き継ぎ=${CARRY_HP ? 'あり' : 'なし'} HP先買い=${HP_FIRST}段階 低いカードを外す=${TRIM ? 'あり' : 'なし'}`);
   console.log('目標: ビルド完成率 S2開始 50% / S3開始 80% / S4以降 90〜100%。完成率 = 買い物リストの金額ベース、そのステージに到達したランの平均\n');
-  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均', '開始時デッキ枚数の平均'].join('\t'));
+  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均', '開始時デッキ枚数の平均', 'トリプルエース発動回数/ステージ'].join('\t'));
   for (const name of Object.keys(SHOP)) {
     if (ONLY && !name.includes(ONLY)) continue;
     for (const [pname, optimal] of policies) {
@@ -255,7 +259,7 @@ if (RUN_MODE) {
       const earnedAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.earned.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.earned[s], 0) / rs.length / 1000) + 'k' : '-'; });
       const hpAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.hp.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.hp[s], 0) / rs.length) : '-'; });
       const deckAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.deckSize.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.deckSize[s], 0) / rs.length) : '-'; });
-      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' '), deckAvg.join(' ')].join('	'));
+      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' '), deckAvg.join(' '), STAGES.map((_, s) => { const rs = runs.filter(r => r.taFires.length > s); return rs.length ? (rs.reduce((a, r) => a + r.taFires[s], 0) / rs.length).toFixed(1) : '-'; }).join(' ')].join('	'));
     }
   }
   process.exit(0);

@@ -96,7 +96,8 @@ function render(){
     e.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();toggle(c);}});
     h.appendChild(e);
   });
-  $('deckCnt').innerHTML=`山札 ${S.deck.length} ・ 手札 ${S.hand.length}/${S.handMax}${S.handMax>HAND?' <b>上限+'+(S.handMax-HAND)+'</b>':''}`;
+  const aces=S.hand.length-handCount();
+  $('deckCnt').innerHTML=`山札 ${S.deck.length} ・ 手札 ${handCount()}/${S.handMax}${aces?` + A ${aces}`:''}${S.handMax>HAND?' <b>上限+'+(S.handMax-HAND)+'</b>':''}`;
   $('goBtn').disabled=!(sel&&S.picked.length===3);$('clearBtn').disabled=!sel||!S.picked.length;
   $('pauseBtn').disabled=!sel;renderPause();
   $('skipBtn').hidden=S.phase!=='onemore';
