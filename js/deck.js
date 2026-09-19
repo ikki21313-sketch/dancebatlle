@@ -16,8 +16,8 @@ function detectCombos(cards){const k=detectCombo(cards);if(!k)return [];const s=
 function stageCfg(){return STAGES[S.stage||0];}
 /* enemy plays 3 random cards inside the stage's range for this round (the enemy 'deck' is a range, not a pile) */
 function cpuDeal(){const rg=stageCfg().ranges.find(r=>S.round<=r.until);return [0,1,2].map(()=>({id:++uid,suit:'DSC'[Math.floor(Math.random()*3)],rank:rg.min+Math.floor(Math.random()*(rg.max-rg.min+1)),chest:Math.random()<CHEST_RATE}));}
-/* a random card for a chest: any suit, 3〜K, respecting the copy limit; returns null if the deck is full everywhere */
-function chestCard(){for(let i=0;i<20;i++){const suit='DSC'[Math.floor(Math.random()*3)],rank=CHEST_MIN_RANK+Math.floor(Math.random()*(CHEST_MAX_RANK-CHEST_MIN_RANK+1));if((RUN.deck[suit+rank]||0)<DECK_MAX_COPIES)return {suit,rank};}return null;}
+/* a random card for a chest: any suit, 3〜K, respecting the copy limit on owned cards; returns null if everything is full */
+function chestCard(){for(let i=0;i<20;i++){const suit='DSC'[Math.floor(Math.random()*3)],rank=CHEST_MIN_RANK+Math.floor(Math.random()*(CHEST_MAX_RANK-CHEST_MIN_RANK+1));if((RUN.owned[suit+rank]||0)<DECK_MAX_COPIES)return {suit,rank};}return null;}
 function cardName(c){return SUITS[c.suit].sym+rankLabel(c.rank);}
 function skillDeal(){const sk=stageCfg().skill,turn=sk.len-S.skillRounds+1;return sk.cards(S.skillLevel,turn).map(c=>({id:++uid,suit:c.suit,rank:c.rank,skill:true}));}
 
@@ -33,7 +33,8 @@ function resolve(p,c,label,mods={}){
     if(BEATS[pt]===ct){m=sk.adv4x?4:2;mul='相性 ×'+m;}
     else if(BEATS[ct]===pt){cv*=2;mul='相性負け';}
   }else{mul=label||'1more';}
-  if(sk.low2x&&p.rank<=6&&m<2){m=2;mul=(mul?mul+' ':'')+'6以下×2';}
+  /* 6以下×2 は相手のカードと戦う時だけ。相手がいない 1more / Revolution は数字どおり */
+  if(c&&sk.low2x&&p.rank<=6&&m<2){m=2;mul=(mul?mul+' ':'')+'6以下×2';}
   pv*=m;
   if(mods.mul)pv*=mods.mul;
   if(mods.add)pv+=mods.add;

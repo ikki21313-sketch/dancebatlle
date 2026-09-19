@@ -157,12 +157,15 @@ dialog li{margin:3px 0}
 .skill-list .sk-buy{white-space:nowrap;font-family:var(--num);font-size:13px;padding:6px 10px}
 .skill-list .sk-owned{font-size:11px;color:var(--gold);white-space:nowrap}
 .deck-grid{overflow-x:auto;font-variant-numeric:tabular-nums}
-.dg-row{display:grid;grid-template-columns:96px repeat(13,minmax(44px,1fr));gap:3px;align-items:center;margin-bottom:3px}
+.dg-row{display:grid;grid-template-columns:64px repeat(13,minmax(52px,1fr));gap:3px;align-items:center;margin-bottom:3px}
 .dg-row.head .dg-cell{font-family:var(--num);color:var(--muted);font-size:12px;text-align:center}
 .dg-suit{font-size:12px;font-weight:700;white-space:nowrap}
 .dg-suit.rock{color:var(--rock)}.dg-suit.scis{color:var(--scis)}.dg-suit.papr{color:var(--papr)}
-.dg-cell{display:flex;align-items:center;justify-content:center;gap:2px;background:var(--felt);border:1px solid var(--felt-line);border-radius:5px;padding:2px;min-height:28px}
+.dg-cell{display:flex;align-items:center;justify-content:center;gap:1px;background:var(--felt);border:1px solid var(--felt-line);border-radius:5px;padding:2px 1px;min-height:28px}
 .dg-cell.zero b{color:var(--dim)}
+.dg-cell b small{font-size:10px;font-weight:500;color:var(--muted)}
+.dg-cell.none b small{color:var(--dim)}
+.dg-btn.free:not(:disabled){background:color-mix(in srgb,var(--gold) 30%,var(--felt-soft));color:var(--gold)}
 .dg-cell.changed b{color:#f2c100;text-shadow:0 0 8px rgba(242,193,0,.5)}
 .dg-cell.changed{border-color:#f2c100}
 .dg-row.bulk .dg-cell{background:transparent;border-color:transparent;min-height:0;padding:0}
@@ -174,8 +177,8 @@ dialog li{margin:3px 0}
 .skill-list .sk.changed{border-color:#f2c100}
 .skill-list .sk.changed .sk-body b{color:#f2c100}
 .skill-list .sk.changed .lv{color:#f2c100}
-.dg-cell b{font-family:var(--num);font-size:14px;min-width:14px;text-align:center}
-.dg-btn{width:18px;height:22px;border:none;border-radius:4px;background:var(--felt-soft);color:var(--ink);font-weight:700;cursor:pointer;line-height:1;padding:0}
+.dg-cell b{font-family:var(--num);font-size:14px;text-align:center;white-space:nowrap}
+.dg-btn{width:14px;height:22px;border:none;border-radius:4px;background:var(--felt-soft);color:var(--ink);font-weight:700;cursor:pointer;line-height:1;padding:0}
 .dg-btn:hover:not(:disabled){background:var(--gold);color:var(--gold-ink)}
 .dg-btn:disabled{opacity:.25;cursor:not-allowed}
 .dg-row.cost .dg-cell{flex-direction:column;gap:0;background:transparent;border-color:transparent;min-height:0}

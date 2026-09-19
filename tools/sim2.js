@@ -38,7 +38,7 @@ const STAGES = [
 function resolve(p, c, sk, mods = {}) {
   let pv = mods.base ?? p.rank, cv = c ? c.rank : 0, m = 1;
   if (c && c.suit !== 'H') { if (BEATS[p.suit] === c.suit) m = sk.adv4x ? 4 : 2; else if (BEATS[c.suit] === p.suit) cv *= 2; }
-  if (sk.low2x && p.rank <= 6 && m < 2) m = 2;
+  if (c && sk.low2x && p.rank <= 6 && m < 2) m = 2;   // 戦闘時のみ。1more / Revolution は数字どおり
   pv *= m; if (mods.mul) pv *= mods.mul; if (mods.add) pv += mods.add;
   const d = pv - cv; return { dmgCpu: d > 0 ? d : 0, dmgMe: d < 0 ? -d : 0, win: pv > cv };
 }
@@ -195,7 +195,7 @@ const pct = x => (x * 100).toFixed(0).padStart(3) + '%';
 const policies = POLICY === 'all' ? [['最適', true], ['ミス' + Math.round(MISTAKE * 100) + '%', false]] : [[POLICY, POLICY === 'optimal']];
 // ---------------- run mode: whole runs with purchases ----------------
 const CARD = 30000, CARD_QK = 40000, cardCost = r => (r >= 12 ? CARD_QK : CARD);
-const SK = { low2x: 30000, adv4x: 20000, draw1: 10000, draw2: 20000, draw3: 30000, chain: 10000, tripleAce: 50000, triple7: 30000, royal: 10000, special: 20000, hp1: 10000, hp2: 15000, hp3: 20000 };
+const SK = { low2x: 50000, adv4x: 80000, draw1: 50000, draw2: 80000, draw3: 100000, chain: 30000, tripleAce: 60000, triple7: 30000, royal: 10000, special: 30000, hp1: 10000, hp2: 15000, hp3: 20000 };
 // 買い物リスト: 上から順に、ポイントが足りるものを買う(型の完成 = リスト全部)
 const SHOP = {
   'ロー2倍型(6以下×2)': [['skill', 'low2x'], ['card', 'D5'], ['card', 'S5'], ['card', 'C5'], ['skill', 'draw1'], ['card', 'D6'], ['card', 'S6'], ['card', 'C6']],

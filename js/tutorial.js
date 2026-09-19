@@ -39,10 +39,10 @@ const TUTORIAL=[
      return g;}},
   {title:'Build Your Deck',lead:'勝てばスコア。スコアでデッキをいじる。',
    shots:[{src:'img/tut_build.png',cap:'ステージの間に出る画面。変えたところは黄色、迷ったらリセット'}],
-   body:'撃破・1more・コンボ・ノーダメージ、速さでもポイントが入る。ステージの間に <b>カードを足す</b>(1枚30,000、Q・Kは40,000)、<b>減らす</b>(ポイントが返る)、<b>スキルやHPを買う</b>。<br>ルールは2つだけ。<span class="k">20枚以上</span>、<span class="k">同じカードは3枚まで</span>。迷ったらリセット。',
+   body:'撃破・1more・コンボ・ノーダメージ、速さでもポイントが入る。ステージの間に <b>カードを足す</b>(1枚30,000、Q・Kは40,000)、<b>デッキから外す</b>(外しても持ったまま。戻すのは無料)、<b>スキルやHPを買う</b>。<br>ルールは2つだけ。<span class="k">20枚以上</span>、<span class="k">同じカードは3枚まで</span>。迷ったらリセット。',
    illo(){const w=el('div','tut-build');
      const m=el('div','mini');m.append(el('span','tut-cap','デッキ表'),el('div','cellrow','<span class="cell"><i>−</i><b>1</b><i>+</i></span><span class="cell y"><i>−</i><b>2</b><i>+</i></span><span class="cell"><i>−</i><b>1</b><i>+</i></span><span class="cell y"><i>−</i><b>0</b><i>+</i></span>'),el('span','tut-cap','変えたところは黄色'));
-     const s=el('div','mini');s.append(el('span','tut-cap','スキル'),el('span','tut-chip gold','相性有利で4倍  20,000 pt'),el('span','tut-chip','毎ターン+1ドロー  10,000 pt'));
+     const s=el('div','mini');s.append(el('span','tut-cap','スキル'),el('span','tut-chip gold','相性有利で4倍  80,000 pt'),el('span','tut-chip','毎ターン+1ドロー  50,000 pt'));
      w.append(m,s);return w;}},
 ];
 

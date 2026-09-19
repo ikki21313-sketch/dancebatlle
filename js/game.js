@@ -2,7 +2,7 @@
 let S=null,timerId=null,uid=0,seq=0;
 /* RUN: carried across stages (points, deck composition, skills). S: one battle */
 let RUN=null;
-function newRun(){RUN={points:0,deck:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
+function newRun(){RUN={points:0,deck:baseDeckCounts(),owned:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
 function addScore(key,label){
   const pts=SCORE[key];S.score+=pts;S.scoreLog.push({label,pts});
   log(`　+${pts.toLocaleString()} ${label}`,'gold');scoreToast(label,pts);$('scoreLbl').textContent=`SCORE ${S.score.toLocaleString()}`;
@@ -228,8 +228,8 @@ async function commit(){
     /* score: a kill = beating a real CPU card (not the 0s of 1more / Revolution) */
     if(r.win&&c){
       S.kills++;S.streak++;roundKills++;addScore('kill','撃破');
-      /* treasure: the card joins RUN.deck only, so it is dealt from the next stage on (not into this stage's pile) */
-      if(c.chest){const g=chestCard();if(g){RUN.deck[g.suit+g.rank]=(RUN.deck[g.suit+g.rank]||0)+1;
+      /* treasure: the card is owned and put in RUN.deck only, so it is dealt from the next stage on (not into this stage's pile) */
+      if(c.chest){const g=chestCard();if(g){const gk=g.suit+g.rank;RUN.owned[gk]=(RUN.owned[gk]||0)+1;RUN.deck[gk]=(RUN.deck[gk]||0)+1;
         log(`　宝箱! ${cardName(g)} カードを獲得(次のステージから使用できます)`,'gold');
         sfx('onemore');await chestCutIn(g);if(my!==seq)return;}}
       if(S.streak===5)addScore('streak5','ノーダメージで5枚撃破');

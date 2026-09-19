@@ -50,19 +50,17 @@ const STAGES=[
 const SCORE={kill:400,three:800,streak5:1500,streak10:3500,streak15:6000,noDamageClear:8000,onemore:3500,combo:2500,skillBreak:8000,round20:4000,round30:16000,time3m:8000,time2m:16000};
 /* deck build (DeckBuild.md) */
 const DECK_MIN=20,DECK_MAX_COPIES=3;
-/* points refunded when a card is removed (DeckBuild.md; 10 is read as 1000 from the 100×rank pattern) */
-const REMOVE_REFUND={1:100,2:200,3:300,4:400,5:500,6:600,7:700,8:800,9:900,10:1000,11:11000,12:12000,13:20000};
-/* adding a card: flat 30,000; Q and K 40,000 */
+/* buying a card: flat 30,000; Q and K 40,000. Taking a card out of the deck gives nothing back, but it stays owned (js/build.js) */
 const ADD_COST={1:30000,2:30000,3:30000,4:30000,5:30000,6:30000,7:30000,8:30000,9:30000,10:30000,11:30000,12:40000,13:40000};
 const SKILLS={
-  low2x:{name:'6以下のカードが常に2倍',desc:'6以下のカードは相性に関係なくパワー2倍(有利でも2倍)',cost:30000},
-  adv4x:{name:'相性有利で4倍',desc:'相性が有利なカードのパワーが2倍ではなく4倍になる',cost:20000},
-  draw:{name:'毎ターン+1ドロー',desc:'手札の上限が+1(3段階まで重ねられる)',levels:[10000,20000,30000]},
-  chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:10000},
-  tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:50000},
+  low2x:{name:'6以下のカードが常に2倍',desc:'相手のカードと戦う時、6以下のカードは相性に関係なくパワー2倍(有利でも2倍)。1moreなど相手がいない攻撃は数字どおり',cost:50000},
+  adv4x:{name:'相性有利で4倍',desc:'相性が有利なカードのパワーが2倍ではなく4倍になる',cost:80000},
+  draw:{name:'毎ターン+1ドロー',desc:'手札の上限が+1(3段階まで重ねられる)',levels:[50000,80000,100000]},
+  chain:{name:'7以上で1more連鎖',desc:'7以上のカード3枚で1moreしたとき、そのあとさらに1more',cost:30000},
+  tripleAce:{name:'トリプルエース',desc:'♦♣♠のAを3枚出したとき、Aのパワーが残りの手札の数字の合計になる',cost:60000},
   triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
   royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+50',cost:10000},
-  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:20000},
+  special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:30000},
   hp:{name:'最大HP +10',desc:'自分の最大HPが+10(5段階まで)。型の完成度とHPをポイントで天秤にかける',levels:[10000,15000,20000,25000,30000]}
 };
 const HP_PER_LEVEL=10;
