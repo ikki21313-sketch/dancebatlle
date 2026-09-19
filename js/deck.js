@@ -7,9 +7,11 @@ function refill(){while(S.hand.length<S.handMax){const c=drawOne();if(!c)break;S
 function detectCombo(cards){
   if(cards.length!==3)return null;
   if(cards.every(c=>c.rank===cards[0].rank))return 'rev';
-  if(cards.every(c=>c.suit===cards[0].suit))return {S:'sword',D:'diamond',C:'clover'}[cards[0].suit]||null;
-  return null;
+  return suitCombo(cards);
 }
+function suitCombo(cards){return cards.length===3&&cards.every(c=>c.suit===cards[0].suit)?({S:'sword',D:'diamond',C:'clover'}[cards[0].suit]||null):null;}
+/* K化で「同じスートの同じ数字3枚」が作れる。その時は Revolution とスートコンボの両方が発動する */
+function detectCombos(cards){const k=detectCombo(cards);if(!k)return [];const s=suitCombo(cards);return k==='rev'&&s?['rev',s]:[k];}
 
 function stageCfg(){return STAGES[S.stage||0];}
 /* enemy plays 3 random cards inside the stage's range for this round (the enemy 'deck' is a range, not a pile) */

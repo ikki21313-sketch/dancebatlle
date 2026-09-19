@@ -44,9 +44,10 @@ function resolve(p, c, sk, mods = {}) {
 }
 function detectCombo(cards) {
   if (cards.every(c => c.rank === cards[0].rank)) return 'rev';
-  if (cards.every(c => c.suit === cards[0].suit)) return { S: 'sword', D: 'diamond', C: 'clover' }[cards[0].suit];
-  return null;
+  return suitCombo(cards);
 }
+// K化で「同じスートの同じ数字3枚」が作れる。その時は Revolution とスートコンボの両方が発動する
+function suitCombo(cards) { return cards.every(c => c.suit === cards[0].suit) ? { S: 'sword', D: 'diamond', C: 'clover' }[cards[0].suit] : null; }
 function skillPatterns(cards, inOneMore, hand, sk) {
   const suits = new Set(cards.map(c => c.suit)).size, same = cards.every(c => c.rank === cards[0].rank);
   const out = { mods: [{}, {}, {}] };
@@ -76,7 +77,7 @@ function evalTrio(S, trio, field, sk, inOneMore) {
   const rest = S.hand.filter(c => !trio.includes(c));
   let score = dc - 1.6 * dm;
   if (!inOneMore && wins === 3 && suits === 3) score += Math.min(3, rest.length) ? rest.map(c => c.rank).sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) * 0.8 + 4 : 4;
-  if (combo && combo !== 'rev') score += 6;
+  if (suitCombo(trio)) score += 6;
   if (pat.triple7) score += 12;
   if (dm >= S.me) score -= 1000;
   return { score, dc, dm, wins };
@@ -133,10 +134,11 @@ function playStage(st, deckCounts, sk, optimal) {
     let oneMore = false, chainReady = false, triple7Ready = false, dead = false;
     for (let pass = 0; pass < 4; pass++) {           // normal battle + up to 3 extra 1mores
       const combo = detectCombo(trio), rest = S.hand.filter(c => !trio.includes(c));
-      if (combo && combo !== 'rev') applyCombo(S, combo, rest);
+      const suitC = suitCombo(trio);
+      if (suitC) applyCombo(S, suitC, rest);
       const pat = skillPatterns(trio, oneMore, S.hand, sk); if (pat.triple7) triple7Ready = true;
       let wins = 0;
-      if (combo && combo !== 'rev' && !oneMore) add('combo'); else if (combo && combo !== 'rev') add('combo');
+      if (suitC) add('combo');
       for (let i = 0; i < 3; i++) {
         const c = (oneMore || combo === 'rev') ? null : field[i], r = resolve(trio[i], c, sk, pat.mods[i]);
         S.cpu -= r.dmgCpu; S.me -= r.dmgMe; roundDmg += r.dmgCpu; if (r.win) wins++;

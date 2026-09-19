@@ -172,8 +172,7 @@ async function commit(){
   autoFill();stopTimer();
   const oneMore=S.phase==='onemore';S.phase='battle';render();
   let roundKills=0;
-  const combo=detectCombo(S.picked);
-  if(combo){await runCombo(combo,my);if(my!==seq)return;}
+  for(const combo of detectCombos(S.picked)){await runCombo(combo,my);if(my!==seq)return;}
   /* skill patterns (Triple Ace / Triple 7 / Royal Straight / Special Attack) */
   const pat=skillPatterns(S.picked,oneMore,S.hand);
   for(const [t,sub] of pat.cutins){sfx('onemore');await cutIn(t,'break',4,sub);if(my!==seq)return;log(`スキル発動: ${t} ${sub}`,'gold');}
