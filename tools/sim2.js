@@ -14,6 +14,8 @@ const S4P = Number(opt('s4') || 18), S5P = Number(opt('s5') || 22);   // 仮ス�
 const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル持続ラウンド +n
 const HP_LV = Number(opt('hp') || 0);
 const RUN_MODE = args.includes('--run');
+const CARRY_HP = !args.includes('--nocarry');   // 通しモード: HPをステージ間で引き継ぐ(現行ルール)。--nocarry で毎ステージ全回復(旧ルール)
+const HP_FIRST = Number(opt('hpFirst') || 0);   // 通しモード: 型の買い物より先に HP を n 段階買う
 const SCORE_MUL = Number(opt('scoreMul') || 1);   // 調整用: 全スコアの倍率
 const CHEST_RATE = Number(opt('chest') || 0.12);
 // S3 調整用: --s3p 威力(1回目) --s3w 白の威力 --s3len 持続 --s3cd CT --s3hp 敵HP --s3lo 7T〜の下限
@@ -117,9 +119,9 @@ function chooseOneMore(S, sk, optimal) {
 }
 
 // ---------------- one stage ----------------
-function playStage(st, deckCounts, sk, optimal) {
+function playStage(st, deckCounts, sk, optimal, startHp) {
   const deck = []; for (const k in deckCounts) for (let i = 0; i < deckCounts[k]; i++) deck.push({ suit: k[0], rank: +k.slice(1) });
-  const S = { me: ME_HP + 10 * (sk.hp ?? HP_LV), cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
+  const S = { me: startHp ?? (ME_HP + 10 * (sk.hp ?? HP_LV)), cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
     skillActive: false, skillRounds: 0, skillLevel: 0, hpTrigger: false, hpTriggers: st.skill.hp.slice().sort((a, b) => b - a),
     pts: 0, streak: 0, tookDamage: false, chests: [] };
   const add = k => { S.pts += SCORE[k] * SCORE_MUL; };
@@ -168,7 +170,7 @@ function playStage(st, deckCounts, sk, optimal) {
   }
   const win = S.cpu <= 0;
   if (win) { if (!S.tookDamage) add('noDamageClear'); add(optimal ? 'time2m' : 'time3m'); }
-  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests };
+  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests, me: S.me };
 }
 
 // ---------------- builds ----------------
@@ -209,24 +211,26 @@ const itemCost = ([kind, k]) => kind === 'skill' ? SK[k] : cardCost(+k.slice(1))
 const applyItem = (deck, sk, [kind, k]) => { if (kind === 'skill') { if (k.startsWith('draw')) sk.draw = (sk.draw || 0) + 1; else if (k.startsWith('hp')) sk.hp = (sk.hp || 0) + 1; else sk[k] = 1; } else deck[k] = (deck[k] || 0) + 1; };
 function playRun(name, optimal) {
   const list = SHOP[name], total = list.reduce((a, it) => a + itemCost(it), 0);
-  const deck = { ...BASE }, sk = { hp: 0 }; let pts = 0, bought = 0, i = 0;
-  const out = { stagesCleared: 0, completion: [], points: [], earned: [] };
+  const deck = { ...BASE }, sk = { hp: 0 }; let pts = 0, bought = 0, i = 0, hp = ME_HP;
+  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [] };
+  const buyHp = (max) => { for (const h of ['hp1', 'hp2', 'hp3'].slice(sk.hp || 0, max)) { if (pts < SK[h]) break; pts -= SK[h]; sk.hp++; hp += 10; } };
   for (let s = 0; s < STAGES.length; s++) {
-    out.completion.push(bought / total); out.points.push(pts);
-    const r = playStage(STAGES[s], deck, sk, optimal);
+    out.completion.push(bought / total); out.points.push(pts); out.hp.push(hp);
+    const r = playStage(STAGES[s], deck, sk, optimal, CARRY_HP ? hp : undefined);
     if (!r.win) break;
-    out.stagesCleared = s + 1; pts += r.pts; out.earned.push(r.pts);
+    out.stagesCleared = s + 1; pts += r.pts; out.earned.push(r.pts); if (CARRY_HP) hp = r.me;
+    buyHp(HP_FIRST);
     for (const c of r.chests) { const key = c.suit + c.rank; if ((deck[key] || 0) < 3) deck[key] = (deck[key] || 0) + 1; }
     while (i < list.length && pts >= itemCost(list[i])) { pts -= itemCost(list[i]); bought += itemCost(list[i]); applyItem(deck, sk, list[i]); i++; }
     // leftover: buy HP levels (up to 3) once the build is complete
-    if (i >= list.length) for (const h of ['hp1', 'hp2', 'hp3']) { if ((sk.hp || 0) >= 3) break; if (pts >= SK[h]) { pts -= SK[h]; sk.hp++; } }
+    if (i >= list.length) buyHp(3);
   }
   return out;
 }
 if (RUN_MODE) {
-  console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE}`);
+  console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE} HP引き継ぎ=${CARRY_HP ? 'あり' : 'なし'} HP先買い=${HP_FIRST}段階`);
   console.log('目標: ビルド完成率 S2開始 50% / S3開始 80% / S4以降 90〜100%。完成率 = 買い物リストの金額ベース、そのステージに到達したランの平均\n');
-  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '平均獲得/ステージ'].join('\t'));
+  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均'].join('\t'));
   for (const name of Object.keys(SHOP)) {
     if (ONLY && !name.includes(ONLY)) continue;
     for (const [pname, optimal] of policies) {
@@ -234,7 +238,8 @@ if (RUN_MODE) {
       const cells = STAGES.map((_, s) => { const alive = runs.filter(r => r.completion.length > s); const comp = alive.reduce((a, r) => a + r.completion[s], 0) / Math.max(1, alive.length); return `${pct(comp)} / ${pct(alive.length / N)}`; });
       const total = SHOP[name].reduce((a, it) => a + itemCost(it), 0);
       const earnedAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.earned.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.earned[s], 0) / rs.length / 1000) + 'k' : '-'; });
-      console.log([name, pname, (total / 1000) + 'k', ...cells, earnedAvg.join(' ')].join('	'));
+      const hpAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.hp.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.hp[s], 0) / rs.length) : '-'; });
+      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' ')].join('	'));
     }
   }
   process.exit(0);

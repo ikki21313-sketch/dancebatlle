@@ -33,12 +33,12 @@ const STAGES=[
        return [0,1,2].map(i=>i===wi?{suit:'H',rank:w}:{suit:pick(['D','C','S']),rank:r});},
      desc:level=>`2ラウンドの間、♦♣♠ の ${level===1?15:17} と、相性のない ♥ の ${level===1?13:14} が1枚`}},
   /* ---- 仮置き(敵名・BGM・範囲は未定。tools/sim2.js の仮設定と同じ) ---- */
-  {name:'STAGE 4',enemy:'フォース(仮)',cpu:400,bgm:'music/stage3.mp3',
+  {name:'STAGE 4',enemy:'フォース(仮)',cpu:400,bgm:'music/stage4.mp3',
    ranges:[{until:4,min:9,max:11},{until:6,min:9,max:13},{until:Infinity,min:11,max:13}],
    skill:{hp:[300,200,100],len:2,
      cards:(level,turn)=>{const r=level===1?18:20;return [0,1,2].map(()=>({suit:pick(['D','C','S']),rank:r}));},
      desc:level=>`2ラウンドの間、♦♣♠ のランダムな3枚が ${level===1?18:20} になる`}},
-  {name:'STAGE 5',enemy:'ラスボス(仮)',cpu:500,bgm:'music/stage3.mp3',
+  {name:'STAGE 5',enemy:'ラスボス(仮)',cpu:500,bgm:'music/stage5.mp3',
    ranges:[{until:4,min:10,max:13},{until:6,min:11,max:13},{until:Infinity,min:12,max:13}],
    skill:{hp:[400,300,200,100],len:3,
      cards:(level,turn)=>{const r=level===1?22:24,w=level===1?17:19,wi=Math.floor(Math.random()*3);
@@ -61,7 +61,7 @@ const SKILLS={
   triple7:{name:'トリプル7',desc:'♦♣♠の7を3枚出したとき、1moreのあとに手札を上限まで補充してさらに1more',cost:30000},
   royal:{name:'ロイヤルストレート',desc:'同じスートのJ・Q・Kを出したとき、それぞれのパワー+50',cost:10000},
   special:{name:'Special Attack',desc:'1more中に♦♣♠の同じ数字を3枚出したとき、パワー3倍',cost:30000},
-  hp:{name:'最大HP +10',desc:'自分の最大HPが+10(5段階まで)。型の完成度とHPをポイントで天秤にかける',levels:[10000,15000,20000,25000,30000]}
+  hp:{name:'HP +10',desc:'最大HPといまのHPが+10(5段階まで)。HPはステージをまたいで引き継ぎ、自然には回復しない。回復手段はこれだけ',levels:[10000,15000,20000,25000,30000]}
 };
 const HP_PER_LEVEL=10;
 /* treasure: some enemy cards carry a chest; beating one adds a random card (3〜K, any suit) to your deck */

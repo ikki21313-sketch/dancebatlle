@@ -174,6 +174,10 @@ dialog li{margin:3px 0}
 .dg-bulk:disabled{opacity:.25;cursor:not-allowed}
 .deck-total.changed b{color:#f2c100}
 .build .points b.changed{color:#f2c100}
+.build .points .hp{margin-left:22px;white-space:nowrap}
+.build .points .hp b{color:var(--good,#5fd38d)}
+.build .points #buildHp.low b{color:var(--bad)}
+.build .points #buildHp.changed b{color:#f2c100}
 .skill-list .sk.changed{border-color:#f2c100}
 .skill-list .sk.changed .sk-body b{color:#f2c100}
 .skill-list .sk.changed .lv{color:#f2c100}

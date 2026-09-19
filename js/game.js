@@ -1,8 +1,9 @@
 // ゲーム進行(状態, ラウンド, 選択, バトル, コンボ, 敵スキル, タイマー, 決着)
 let S=null,timerId=null,uid=0,seq=0;
-/* RUN: carried across stages (points, deck composition, skills). S: one battle */
+/* RUN: carried across stages (points, deck composition, skills, HP). S: one battle.
+   RUN.hp = your HP at the start of the next stage: set on a stage clear, raised by the HP purchase. There is no healing between stages */
 let RUN=null;
-function newRun(){RUN={points:0,deck:baseDeckCounts(),owned:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
+function newRun(){RUN={points:0,hp:MAX_ME,deck:baseDeckCounts(),owned:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
 function addScore(key,label){
   const pts=SCORE[key];S.score+=pts;S.scoreLog.push({label,pts});
   log(`　+${pts.toLocaleString()} ${label}`,'gold');scoreToast(label,pts);$('scoreLbl').textContent=`SCORE ${S.score.toLocaleString()}`;
@@ -99,7 +100,7 @@ async function endEnemySkillIfDue(my){
 function freshState(stage=0){
   if(!RUN)newRun();
   const cpuMax=STAGES[stage].cpu,meMax=MAX_ME+HP_PER_LEVEL*(RUN.skills.hp||0);
-  S={stage,cpuMax,meMax,me:meMax,cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
+  S={stage,cpuMax,meMax,me:Math.max(1,Math.min(meMax,RUN.hp??meMax)),cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
     score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
@@ -295,7 +296,7 @@ async function gameOver(){
     const sec=Math.round(S.timeUsed/1000);
     if(S.timeUsed<=120000)addScore('time2m',`クリア時間2分以内 (${sec}秒)`);
     else if(S.timeUsed<=180000)addScore('time3m',`クリア時間3分以内 (${sec}秒)`);
-    RUN.points+=S.score;
+    RUN.points+=S.score;RUN.hp=S.me;   /* HP carries over to the next stage */
     log(`ステージスコア ${S.score.toLocaleString()} → 所持ポイント ${RUN.points.toLocaleString()}`,'r');
   }
   log(win?(last?'全ステージクリア!':`${name} クリア!`):'敗北…','r');

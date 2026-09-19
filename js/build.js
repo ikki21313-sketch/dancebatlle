@@ -7,26 +7,27 @@ function buySkill(k){
   if(!canBuySkill(k))return;
   const cost=skillCost(k);RUN.points-=cost;
   if(SKILLS[k].levels)RUN.skills[k]++;else RUN.skills[k]=true;
+  if(k==='hp')RUN.hp+=HP_PER_LEVEL;   /* max and current HP both go up: the only way to get HP back between stages */
   buildNote(`${SKILLS[k].name} を習得 (−${cost.toLocaleString()})`);renderBuild();
 }
 /* BUILD0: the run as it was when this build screen opened — used for Reset and for highlighting changes */
 let BUILD0=null;
 function openBuild(){
-  BUILD0={points:RUN.points,deck:{...RUN.deck},owned:{...RUN.owned},skills:{...RUN.skills}};
+  BUILD0={points:RUN.points,hp:RUN.hp,deck:{...RUN.deck},owned:{...RUN.owned},skills:{...RUN.skills}};
   /* checkpoint: the run right after the last stage clear, before any build edits — used by "ビルドからやり直す" on defeat */
-  RUN.checkpoint={stage:S.stage,points:RUN.points,deck:{...RUN.deck},owned:{...RUN.owned},skills:{...RUN.skills},score:S.score,scoreLog:S.scoreLog.slice(),eyebrow:$('buildEyebrow').textContent};
+  RUN.checkpoint={stage:S.stage,points:RUN.points,hp:RUN.hp,deck:{...RUN.deck},owned:{...RUN.owned},skills:{...RUN.skills},score:S.score,scoreLog:S.scoreLog.slice(),eyebrow:$('buildEyebrow').textContent};
   $('buildNote').textContent='';renderBuild();
 }
 /* defeat → go back to the build screen as it was after the previous stage clear */
 function retryFromBuild(){
   const cp=RUN&&RUN.checkpoint;if(!cp)return;
   seq++;stopTimer();omfxHide();omfxHide('dgfx');stopFanfare();setSlowmo(false);
-  RUN.points=cp.points;RUN.deck={...cp.deck};RUN.owned={...cp.owned};RUN.skills={...cp.skills};
+  RUN.points=cp.points;RUN.hp=cp.hp;RUN.deck={...cp.deck};RUN.owned={...cp.owned};RUN.skills={...cp.skills};
   S.stage=cp.stage;S.score=cp.score;S.scoreLog=cp.scoreLog.slice();S.phase='over';
   $('buildEyebrow').textContent=cp.eyebrow;
   $('over').classList.remove('show');openBuild();buildNote('前のステージクリア直後の状態に戻しました');$('buildOver').classList.add('show');
 }
-function resetBuild(){if(!BUILD0)return;RUN.points=BUILD0.points;RUN.deck={...BUILD0.deck};RUN.owned={...BUILD0.owned};RUN.skills={...BUILD0.skills};buildNote('この画面での変更を取り消しました');renderBuild();}
+function resetBuild(){if(!BUILD0)return;RUN.points=BUILD0.points;RUN.hp=BUILD0.hp;RUN.deck={...BUILD0.deck};RUN.owned={...BUILD0.owned};RUN.skills={...BUILD0.skills};buildNote('この画面での変更を取り消しました');renderBuild();}
 /* RUN.owned = cards you have, RUN.deck = how many of them are in the deck (shown as 1(2) = 1 in the deck, 2 owned).
    Taking a card out gives no points back, but it stays owned: putting it back is free. "+" beyond what you own buys a new copy */
 function spare(key){return (RUN.owned[key]||0)-(RUN.deck[key]||0);}
@@ -46,6 +47,8 @@ function removeRank(rank){if(!canRemoveRank(rank))return;const n=rankCount(rank)
 function buildNote(t){const n=$('buildNote');n.textContent=t;n.classList.remove('pop');void n.offsetWidth;n.classList.add('pop');}
 
 function renderBuild(){
+  const hpMax=MAX_ME+HP_PER_LEVEL*(RUN.skills.hp||0);
+  $('buildHp').innerHTML=`<b>${RUN.hp}</b> / ${hpMax}`;$('buildHp').classList.toggle('changed',!!BUILD0&&RUN.hp!==BUILD0.hp);$('buildHp').classList.toggle('low',RUN.hp<=hpMax*.3);
   $('buildPoints').textContent=RUN.points.toLocaleString();$('buildPoints').classList.toggle('changed',!!BUILD0&&RUN.points!==BUILD0.points);
   /* score breakdown of the stage just cleared */
   const bd=$('buildScore');bd.innerHTML='';
