@@ -24,6 +24,7 @@
     <span class="name" id="cpuName">CPU</span>
     <div class="hpbar"><i id="cpuBar"></i><span class="ticks" id="cpuTicks"></span></div>
     <span class="hpnum" id="cpuHp">200<small> / 200</small></span>
+    <span class="okcount" id="okCount"></span>
   </section>
 
   <section class="field" id="field">
@@ -131,10 +132,17 @@
 </div>
 
 <div class="over" id="over">
-  <div class="box">
+  <div class="box" id="overBox">
     <div class="big" id="overTitle">WIN</div>
     <p id="overText"></p>
-    <div class="actions center">
+    <div class="confirm">
+      <p>ステージ1の最初から始めます。ポイント・デッキ・スキル・HPはすべてリセットされます。いいですか?</p>
+      <div class="actions center">
+        <button class="btn primary" id="againNoBtn" type="button">やめる</button>
+        <button class="btn" id="againYesBtn" type="button">最初から始める</button>
+      </div>
+    </div>
+    <div class="actions center main">
       <button class="btn" id="retryBuildBtn" type="button" title="前のステージをクリアした直後の状態に戻り、ビルドをやり直してから挑戦">ビルドからやり直す</button>
       <button class="btn" id="retryBtn" type="button">このステージから</button>
       <button class="btn primary" id="againBtn" type="button">最初から</button>

@@ -9,7 +9,10 @@ $('pauseBtn').addEventListener('click',pauseTimer);
 $('skipBtn').addEventListener('click',()=>{ensureBgm();skipOneMore();});
 setMuted(muted);
 $('clearBtn').addEventListener('click',()=>{S.picked=[];render();});
-$('againBtn').addEventListener('click',()=>newGame(0));
+/* "最初から" on a defeat past stage 1 asks first (misclick guard). Nothing is lost on stage 1 or after ALL CLEAR, so no question there */
+$('againBtn').addEventListener('click',()=>{if(S.cpu>0&&S.stage>0)$('overBox').classList.add('confirming');else newGame(0);});
+$('againNoBtn').addEventListener('click',()=>$('overBox').classList.remove('confirming'));
+$('againYesBtn').addEventListener('click',()=>{$('overBox').classList.remove('confirming');newGame(0);});
 $('rulesBtn').addEventListener('click',()=>$('rules').showModal());
 
 /* hot reload: keep the game across republishes */

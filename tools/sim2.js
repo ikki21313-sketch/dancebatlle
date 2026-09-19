@@ -14,6 +14,17 @@ const S4P = Number(opt('s4') || 18), S5P = Number(opt('s5') || 22);   // 仮ス�
 const LEN_PLUS = Number(opt('lenPlus') || 0);   // 全ステージのスキル持続ラウンド +n
 const HP_LV = Number(opt('hp') || 0);
 const RUN_MODE = args.includes('--run');
+// Revolution の調整用: --revNoSkill 敵スキル中は不発(普通に数字で戦う) / --revNo1more Revolution では1moreにならない / --revCd n 使ったあと n ラウンドは不発
+//   --revHalf Revolution のダメージ半分 / --revStat 発動回数とダメージの割合を出す
+const REV_NOSKILL = args.includes('--revNoSkill'), REV_NO1MORE = args.includes('--revNo1more'), REV_CD = Number(opt('revCd') || 0), REV_HALF = args.includes('--revHalf'), REV_STAT = args.includes('--revStat'), REV_ONCE = args.includes('--revOnce');   // --revOnce: 同じ数字の Revolution は1ステージに1回まで
+// --revHiMin n: n 以上の数字の Revolution は相手を吹き飛ばさず、パワー2倍で普通に数字勝負(相性の倍率はその上に乗る。1more は通常の条件)
+const REV_HI_MIN = Number(opt('revHiMin') || 0);
+// --revSkillFight: 敵スキル中の Revolution は(数字に関係なく)吹き飛ばさず、パワー2倍で数字勝負
+const REV_SKILL_FIGHT = args.includes('--revSkillFight');
+const revHi = (combo, trio, inOneMore, S) => combo === 'rev' && !inOneMore && ((REV_HI_MIN > 0 && trio[0].rank >= REV_HI_MIN) || (REV_SKILL_FIGHT && S && S.skillActive));
+const hiMods = m => ({ ...m, mul: (m.mul || 1) * 2 });
+const revOk = (S, trio) => !(REV_NOSKILL && S.skillActive) && !(REV_CD && S.revCd > 0) && !(REV_ONCE && S.revUsed && S.revUsed.has(trio[0].orig ?? trio[0].rank));
+const comboOf = (S, trio, inOneMore) => { const k = detectCombo(trio); return k === 'rev' && !inOneMore && !revOk(S, trio) ? suitCombo(trio) : k; };
 const CARRY_HP = !args.includes('--nocarry');   // 通しモード: HPをステージ間で引き継ぐ(現行ルール)。--nocarry で毎ステージ全回復(旧ルール)
 const TRIM = !args.includes('--notrim');   // 通しモード: 買い物のあと、型のデッキに無いカードを低い順に外して20枚まで絞る(外すのは無料)。--notrim で外さない
 const HP_FIRST = Number(opt('hpFirst') || 0);
@@ -31,6 +42,7 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i 
 // ---------------- rules (mirror of js/config.js, js/deck.js, js/game.js) ----------------
 const ME_HP = 30, HAND = 6, BEATS = { D: 'S', S: 'C', C: 'D' }, SUITS = 'DSC';
 const SCORE = { kill: 400, three: 800, streak5: 1500, streak10: 3500, streak15: 6000, noDamageClear: 8000, onemore: 3500, combo: 2500, skillBreak: 8000, round20: 4000, round30: 16000, time3m: 8000, time2m: 16000 };
+const OVERKILL_PER_DMG = 500;
 const STAGES = [
   { name: 'S1 イッチメーン', cpu: 150, ranges: [[4, 3, 6], [6, 3, 8], [99, 7, 11]], skill: { hp: [100, 50], len: 1, cards: (lv) => ['D', 'C', 'S'].map(suit => ({ suit, rank: lv === 1 ? 13 : 14 })) } },
   { name: 'S2 ニーメン', cpu: 200, ranges: [[4, 5, 7], [6, 5, 9], [99, 7, 11]], skill: { hp: [150, 100, 50], len: 3, cards: (lv, turn) => { const suit = ['D', 'C', 'S'][turn - 1], r = lv === 1 ? 13 : 15; return [0, 1, 2].map(() => ({ suit, rank: r })); } } },
@@ -75,13 +87,14 @@ function cpuDeal(S, st) { const rg = st.ranges.find(r => S.round <= r[0]); const
 // ---------------- policies ----------------
 function perms3(arr) { const out = []; for (let i = 0; i < arr.length; i++) for (let j = 0; j < arr.length; j++) if (j !== i) for (let k = 0; k < arr.length; k++) if (k !== i && k !== j) out.push([arr[i], arr[j], arr[k]]); return out; }
 function evalTrio(S, trio, field, sk, inOneMore) {
-  const combo = detectCombo(trio), pat = skillPatterns(trio, inOneMore, S.hand, sk);
+  const combo = comboOf(S, trio, inOneMore), pat = skillPatterns(trio, inOneMore, S.hand, sk);
   let dc = 0, dm = 0, wins = 0;
-  for (let i = 0; i < 3; i++) { const c = (inOneMore || combo === 'rev') ? null : field[i]; const r = resolve(trio[i], c, sk, pat.mods[i]); dc += r.dmgCpu; dm += r.dmgMe; if (r.win) wins++; }
+  const hi = revHi(combo, trio, inOneMore, S);
+  for (let i = 0; i < 3; i++) { const c = (inOneMore || (combo === 'rev' && !hi)) ? null : field[i]; const r = resolve(trio[i], c, sk, hi ? hiMods(pat.mods[i]) : pat.mods[i]); if (REV_HALF && combo === 'rev' && !inOneMore) r.dmgCpu = Math.ceil(r.dmgCpu / 2); dc += r.dmgCpu; dm += r.dmgMe; if (r.win) wins++; }
   const suits = new Set(trio.map(c => c.suit)).size;
   const rest = S.hand.filter(c => !trio.includes(c));
   let score = dc - 1.6 * dm;
-  if (!inOneMore && wins === 3 && suits === 3) score += Math.min(3, rest.length) ? rest.map(c => c.rank).sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) * 0.8 + 4 : 4;
+  if (!inOneMore && wins === 3 && suits === 3 && !(REV_NO1MORE && combo === 'rev')) score += Math.min(3, rest.length) ? rest.map(c => c.rank).sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) * 0.8 + 4 : 4;
   if (suitCombo(trio)) score += 6;
   if (pat.triple7) score += 12;
   if (dm >= S.me) score -= 1000;
@@ -126,7 +139,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
   const deck = []; for (const k in deckCounts) for (let i = 0; i < deckCounts[k]; i++) deck.push({ suit: k[0], rank: +k.slice(1) });
   const S = { me: startHp ?? (ME_HP + 10 * (sk.hp ?? HP_LV)), cpu: st.cpu, deck: shuffle(deck), discard: [], hand: [], handMax: HAND + (sk.draw || 0), round: 0,
     skillActive: false, skillRounds: 0, skillLevel: 0, hpTrigger: false, hpTriggers: st.skill.hp.slice().sort((a, b) => b - a),
-    pts: 0, streak: 0, tookDamage: false, chests: [], taFires: 0, aceFree: TA_FREE && !!sk.tripleAce };
+    pts: 0, streak: 0, tookDamage: false, chests: [], taFires: 0, revFires: 0, revDmg: 0, revCd: 0, revPass: false, aceFree: TA_FREE && !!sk.tripleAce };
   const add = k => { S.pts += SCORE[k] * SCORE_MUL; };
   refill(S);
   while (S.round < 60) {
@@ -138,7 +151,8 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
     if (!trio) break;
     let oneMore = false, chainReady = false, triple7Ready = false, dead = false;
     for (let pass = 0; pass < 4; pass++) {           // normal battle + up to 3 extra 1mores
-      const combo = detectCombo(trio), rest = S.hand.filter(c => !trio.includes(c));
+      const combo = comboOf(S, trio, oneMore), rest = S.hand.filter(c => !trio.includes(c));
+      const isRev = combo === 'rev' && !oneMore; if (isRev) { S.revFires++; S.revCd = REV_CD + 1; (S.revUsed ||= new Set()).add(trio[0].orig ?? trio[0].rank); }
       const suitC = suitCombo(trio);
       if (suitC) applyCombo(S, suitC, rest);
       const pat = skillPatterns(trio, oneMore, S.hand, sk); if (pat.triple7) triple7Ready = true;
@@ -146,19 +160,25 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
       let wins = 0;
       if (suitC) add('combo');
       for (let i = 0; i < 3; i++) {
-        const c = (oneMore || combo === 'rev') ? null : field[i], r = resolve(trio[i], c, sk, pat.mods[i]);
+        const hi = revHi(combo, trio, oneMore, S);
+        const c = (oneMore || (combo === 'rev' && !hi)) ? null : field[i], r = resolve(trio[i], c, sk, hi ? hiMods(pat.mods[i]) : pat.mods[i]);
+        if (REV_HALF && isRev) r.dmgCpu = Math.ceil(r.dmgCpu / 2);
+        if (isRev || S.revPass) S.revDmg += Math.min(r.dmgCpu, Math.max(0, S.cpu));
         S.cpu -= r.dmgCpu; S.me -= r.dmgMe; roundDmg += r.dmgCpu; if (r.win) wins++;
         if (r.dmgMe) { S.tookDamage = true; S.streak = 0; }
         if (r.win && c) { roundKills++; S.streak++; add('kill'); if (S.streak === 5) add('streak5'); else if (S.streak === 10) add('streak10'); else if (S.streak === 15) add('streak15');
           if (c.chest) S.chests.push({ suit: SUITS[rnd(3)], rank: 3 + rnd(11) }); }
         while (S.cpu > 0 && S.hpTriggers.length && S.cpu <= S.hpTriggers[0]) { S.hpTriggers.shift(); if (!S.skillActive) S.hpTrigger = true; }
-        if (S.me <= 0 || S.cpu <= 0) { dead = true; break; }
+        if (S.me <= 0) { dead = true; break; }
+        if (S.cpu <= 0) {   // OverKill: 残りのカードも数字どおり入る。余剰ダメージ×500点、1ターンのダメージボーナスにも数える
+          let over = -S.cpu; for (let j = i + 1; j < 3; j++) { const o = resolve(trio[j], null, sk, pat.mods[j]); over += o.dmgCpu; roundDmg += o.dmgCpu; }
+          S.pts += over * OVERKILL_PER_DMG * SCORE_MUL; dead = true; break; }
       }
       for (const c of trio) { S.hand.splice(S.hand.indexOf(c), 1); if (c.orig != null) { c.rank = c.orig; delete c.orig; } S.discard.push(c); }
       if (!oneMore && roundKills === 3) add('three');
       if (dead) break;
       let again = false;
-      if (!oneMore && wins === 3 && new Set(trio.map(c => c.suit)).size === 3) { again = true; chainReady = !!sk.chain && trio.every(c => c.rank >= 7); }
+      if (!oneMore && wins === 3 && new Set(trio.map(c => c.suit)).size === 3 && !(REV_NO1MORE && isRev)) { again = true; S.revPass = isRev; chainReady = !!sk.chain && trio.every(c => c.rank >= 7); }
       else if (oneMore && triple7Ready) { triple7Ready = false; refill(S); again = true; }
       else if (oneMore && chainReady) { chainReady = false; again = true; }
       if (!again) break;
@@ -167,6 +187,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
       trio = chooseOneMore(S, sk, optimal);
       if (!trio) break;                                  // skipped
     }
+    S.revPass = false; if (S.revCd > 0) S.revCd--;
     if (roundDmg >= 30) add('round30'); else if (roundDmg >= 20) add('round20');
     if (dead) break;
     if (S.skillActive) { S.skillRounds--; if (S.skillRounds <= 0) { S.skillActive = false; S.handMax++; add('skillBreak'); } }
@@ -174,7 +195,7 @@ function playStage(st, deckCounts, sk, optimal, startHp) {
   }
   const win = S.cpu <= 0;
   if (win) { if (!S.tookDamage) add('noDamageClear'); add(optimal ? 'time2m' : 'time3m'); }
-  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests, me: S.me, taFires: S.taFires };
+  return { win, rounds: S.round, pts: win ? S.pts : 0, chests: S.chests, me: S.me, taFires: S.taFires, revFires: S.revFires, revDmg: S.revDmg, cpuMax: st.cpu, cpuLeft: S.cpu };
 }
 
 // ---------------- builds ----------------
@@ -214,7 +235,7 @@ const SHOP = {
 const itemCost = ([kind, k]) => kind === 'skill' ? SK[k] : cardCost(+k.slice(1));
 const applyItem = (deck, sk, [kind, k]) => { if (kind === 'skill') { if (k.startsWith('draw')) sk.draw = (sk.draw || 0) + 1; else if (k.startsWith('hp')) sk.hp = (sk.hp || 0) + 1; else { sk[k] = 1; if (k === 'tripleAce' && TA_GIFT) for (const a of ['D1', 'S1', 'C1']) deck[a] = (deck[a] || 0) + 1; } } else deck[k] = (deck[k] || 0) + 1; };
 // 型の完成デッキ(BUILDS[name].deck)に無い、または多すぎるカードを、数字の低い順に外す。20枚(DECK_MIN)は割らない。宝箱で拾ったカードも対象
-const DECK_MIN = 20;
+const DECK_MIN = Number(opt('deckMin') || 20);   // --deckMin n: デッキの下限枚数(外すのはここまで)
 function trimDeck(deck, target) {
   let total = Object.values(deck).reduce((a, b) => a + b, 0), removed = 0;
   for (let rank = 1; rank <= 13 && total > DECK_MIN; rank++) {
@@ -229,12 +250,12 @@ function trimDeck(deck, target) {
 function playRun(name, optimal) {
   const list = SHOP[name], total = list.reduce((a, it) => a + itemCost(it), 0);
   const deck = { ...BASE }, sk = { hp: 0 }; let pts = 0, bought = 0, i = 0, hp = ME_HP;
-  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [], deckSize: [], taFires: [] };
+  const out = { stagesCleared: 0, completion: [], points: [], earned: [], hp: [], deckSize: [], taFires: [], rev: [] };
   const buyHp = (max) => { for (const h of ['hp1', 'hp2', 'hp3'].slice(sk.hp || 0, max)) { if (pts < SK[h]) break; pts -= SK[h]; sk.hp++; hp += 10; } };
   for (let s = 0; s < STAGES.length; s++) {
     out.completion.push(bought / total); out.points.push(pts); out.hp.push(hp); out.deckSize.push(Object.values(deck).reduce((a, b) => a + b, 0));
     const r = playStage(STAGES[s], deck, sk, optimal, CARRY_HP ? hp : undefined);
-    out.taFires.push(r.taFires);
+    out.taFires.push(r.taFires); out.rev.push([r.revFires, r.rounds, r.revDmg / Math.max(1, r.cpuMax - Math.max(0, r.cpuLeft))]);
     if (!r.win) break;
     out.stagesCleared = s + 1; pts += r.pts; out.earned.push(r.pts); if (CARRY_HP) hp = r.me;
     buyHp(HP_FIRST);
@@ -249,7 +270,7 @@ function playRun(name, optimal) {
 if (RUN_MODE) {
   console.log(`通しモード runs=${N} scoreMul=${SCORE_MUL} chest=${CHEST_RATE} HP引き継ぎ=${CARRY_HP ? 'あり' : 'なし'} HP先買い=${HP_FIRST}段階 低いカードを外す=${TRIM ? 'あり' : 'なし'}`);
   console.log('目標: ビルド完成率 S2開始 50% / S3開始 80% / S4以降 90〜100%。完成率 = 買い物リストの金額ベース、そのステージに到達したランの平均\n');
-  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均', '開始時デッキ枚数の平均', 'トリプルエース発動回数/ステージ'].join('\t'));
+  console.log(['ビルド', 'プレイ', 'ビルド総額', ...STAGES.map((s, i) => `S${i + 1}開始 完成率/到達率`), '全クリア率', '平均獲得/ステージ', '開始時HPの平均', '開始時デッキ枚数の平均', 'トリプルエース発動回数/ステージ', 'Revolution 回数/ラウンド/ダメージ割合'].join('\t'));
   for (const name of Object.keys(SHOP)) {
     if (ONLY && !name.includes(ONLY)) continue;
     for (const [pname, optimal] of policies) {
@@ -259,9 +280,18 @@ if (RUN_MODE) {
       const earnedAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.earned.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.earned[s], 0) / rs.length / 1000) + 'k' : '-'; });
       const hpAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.hp.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.hp[s], 0) / rs.length) : '-'; });
       const deckAvg = STAGES.map((_, s) => { const rs = runs.filter(r => r.deckSize.length > s); return rs.length ? Math.round(rs.reduce((a, r) => a + r.deckSize[s], 0) / rs.length) : '-'; });
-      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' '), deckAvg.join(' '), STAGES.map((_, s) => { const rs = runs.filter(r => r.taFires.length > s); return rs.length ? (rs.reduce((a, r) => a + r.taFires[s], 0) / rs.length).toFixed(1) : '-'; }).join(' ')].join('	'));
+      console.log([name, pname, (total / 1000) + 'k', ...cells, pct(runs.filter(r => r.stagesCleared === STAGES.length).length / N), earnedAvg.join(' '), hpAvg.join(' '), deckAvg.join(' '), STAGES.map((_, s) => { const rs = runs.filter(r => r.taFires.length > s); return rs.length ? (rs.reduce((a, r) => a + r.taFires[s], 0) / rs.length).toFixed(1) : '-'; }).join(' '), STAGES.map((_, s) => { const rs = runs.filter(r => r.rev.length > s); if (!rs.length) return '-'; const av = i => rs.reduce((a, r) => a + r.rev[s][i], 0) / rs.length; return `${av(0).toFixed(1)}/${av(1).toFixed(1)}/${Math.round(av(2) * 100)}%`; }).join(' ')].join('	'));
     }
   }
+  process.exit(0);
+}
+// ---------------- Revolution の比重 ----------------
+if (REV_STAT) {
+  console.log('Revolution の発動回数 / ステージ、と与えたダメージのうち Revolution(とそこから続く1more)が占める割合。型どおり×最適、勝った試合のみ');
+  console.log(['ビルド', ...STAGES.map(s => s.name.split(' ')[0] + ' 回数/ラウンド/割合')].join('	'));
+  for (const [name, b] of Object.entries(BUILDS)) { if (ONLY && !name.includes(ONLY)) continue;
+    const cells = STAGES.map(st => { const rs = []; for (let g = 0; g < N; g++) { const r = playStage(st, b.deck, b.skills, true); if (r.win) rs.push(r); } if (!rs.length) return '-'; const avg = f => rs.reduce((a, r) => a + f(r), 0) / rs.length; return `${avg(r => r.revFires).toFixed(1)} / ${avg(r => r.rounds).toFixed(1)} / ${pct(avg(r => r.revDmg / r.cpuMax))}`; });
+    console.log([name, ...cells].join('	')); }
   process.exit(0);
 }
 // ---------------- run ----------------

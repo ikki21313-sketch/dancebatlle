@@ -36,6 +36,7 @@ function render(){
   const cpuMax=S.cpuMax||MAX_CPU,meMax=S.meMax||MAX_ME;
   $('stageLbl').textContent=`${STAGES[S.stage||0].name} / ${STAGES.length}`;$('cpuName').textContent=STAGES[S.stage||0].enemy;$('scoreLbl').textContent=`SCORE ${(S.score||0).toLocaleString()}`;
   $('cpuHp').innerHTML=`${S.cpu}<small> / ${cpuMax}</small>`;$('meHp').innerHTML=`${S.me}<small> / ${meMax}</small>`;
+  const ok=$('okCount');ok.classList.toggle('show',S.overkill>0);ok.innerHTML=S.overkill>0?`<small>OVER KILL</small>−${S.overkill}`:'';
   const cb=$('cpuBar'),mb=$('meBar');cb.style.width=(S.cpu/cpuMax*100)+'%';mb.style.width=(S.me/meMax*100)+'%';
   cb.classList.toggle('low',S.cpu<=cpuMax*.3);
   /* skill ticks: one vertical bar per HP threshold; consumed ones go dim */

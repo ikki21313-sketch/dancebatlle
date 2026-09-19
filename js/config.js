@@ -48,6 +48,8 @@ const STAGES=[
 /* score (Score.md): points earned per stage, spent on the deck-build screen */
 /* 2026-09-19: scaled to about 0.8x so a build is ~50% affordable at the start of stage 2 and ~90% at stage 3 (Builds.md) */
 const SCORE={kill:400,three:800,streak5:1500,streak10:3500,streak15:6000,noDamageClear:8000,onemore:3500,combo:2500,skillBreak:8000,round20:4000,round30:16000,time3m:8000,time2m:16000};
+/* OverKill: damage beyond 0 HP in the finishing round pays this much per point (Score.md). The big cut-in plays from OVERKILL_CUTIN_MIN up */
+const OVERKILL_PER_DMG=500,OVERKILL_CUTIN_MIN=10;
 /* deck build (DeckBuild.md) */
 const DECK_MIN=20,DECK_MAX_COPIES=3;
 /* buying a card: flat 30,000; Q and K 40,000. Taking a card out of the deck gives nothing back, but it stays owned (js/build.js) */

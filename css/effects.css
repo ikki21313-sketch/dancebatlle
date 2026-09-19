@@ -82,6 +82,20 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 .cutin.enemy .band::before,.cutin.enemy .band::after{background:repeating-linear-gradient(-45deg,#111 0 12px,#ff4a3a 12px 24px);opacity:.8;height:8px}
 .cutin.enemy .txt{color:#fff;text-shadow:0 0 14px #ff2a1a,0 0 36px #ff2a1a}
 .cutin.enemy .sub{color:#ffd0cb}
+.cutin.overkill .band{height:230px;border-top:5px solid #ff2bd6;border-bottom:5px solid #ffd21a;background:repeating-linear-gradient(-45deg,#0a0008 0 26px,#2a0030 26px 52px);background-size:74px 74px;animation:bandIn var(--dur) cubic-bezier(.25,.9,.3,1) forwards,okStripes .5s linear infinite!important}
+.cutin.overkill .band::before,.cutin.overkill .band::after{background:linear-gradient(90deg,#ff2bd6,#ffd21a,#2bf0ff,#ff2bd6);background-size:200% 100%;opacity:1;height:8px;animation:okRainbow .7s linear infinite}
+.cutin.overkill .txt{font-size:112px;color:#fff;letter-spacing:.08em;text-shadow:0 0 14px #ff2bd6,0 0 40px #ff2bd6,0 0 90px #ff2bd6,4px 4px 0 #ffd21a}
+.cutin.overkill.play .txt{animation:txtIn var(--dur) cubic-bezier(.25,.9,.3,1) forwards,okShake .09s linear infinite}
+.cutin.overkill .sub{color:#ffe98a;font-size:22px;font-family:var(--num);letter-spacing:.08em;text-shadow:0 0 12px rgba(255,210,26,.8)}
+@keyframes okStripes{to{background-position:74px 0}}
+@keyframes okRainbow{to{background-position:200% 0}}
+@keyframes okShake{0%{margin:0}25%{margin:-3px 0 0 4px}50%{margin:3px 0 0 -4px}75%{margin:-2px 0 0 -3px}100%{margin:0}}
+/* running OverKill total on the enemy's HP box */
+.okcount{display:none;position:absolute;right:12px;bottom:calc(100% - 10px);font-family:var(--num);font-weight:700;font-size:40px;line-height:1;color:#fff;text-shadow:0 0 10px #ff2bd6,0 0 28px #ff2bd6,2px 2px 0 #ffd21a;pointer-events:none;white-space:nowrap;z-index:5}
+.okcount.show{display:block}
+.okcount small{display:block;font-size:12px;letter-spacing:.3em;color:#ffd21a;text-shadow:0 0 8px rgba(255,210,26,.9);text-align:right}
+.okcount.bump{animation:okBump .35s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes okBump{0%{transform:scale(2.2) rotate(-6deg)}100%{transform:none}}
 .cutin.heat .band{background:#ff7a1a;border-top:4px solid #ffd166;border-bottom:4px solid #ffd166}
 .cutin.heat .band::before,.cutin.heat .band::after{background:repeating-linear-gradient(-45deg,#3a1200 0 12px,#ff7a1a 12px 24px);opacity:.7;height:8px}
 .cutin.heat .txt{color:#fff;text-shadow:0 0 14px #ff3b2f,0 0 40px #ff7a1a}
@@ -141,6 +155,7 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
   .cutin .txt{font-size:44px}.cutin .band{height:100px}
   .cutin .txt.long{font-size:28px}.cutin.rev .band{height:110px}
   .cutin.last .txt{font-size:44px}.cutin.last .band{height:120px}
+  .cutin.overkill .txt{font-size:50px}.cutin.overkill .band{height:150px}.cutin.overkill .sub{font-size:14px}.okcount{font-size:28px}
   .dmgfly.t3{--sz:60px}.dmgfly.t4{--sz:76px}.dmgfly.lethal{--sz:100px}
   .cutin .sub{font-size:13px}.cutin.has-sub .band{height:130px}
   .cutin.chest .band{height:310px}.cutin.chest .txt,.cutin.chest .txt.long{font-size:24px}

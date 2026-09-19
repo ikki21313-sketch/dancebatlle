@@ -4,8 +4,8 @@ let S=null,timerId=null,uid=0,seq=0;
    RUN.hp = your HP at the start of the next stage: set on a stage clear, raised by the HP purchase. There is no healing between stages */
 let RUN=null;
 function newRun(){RUN={points:0,hp:MAX_ME,deck:baseDeckCounts(),owned:baseDeckCounts(),skills:{low2x:false,adv4x:false,draw:0,chain:false,tripleAce:false,triple7:false,royal:false,special:false,hp:0},checkpoint:null};}
-function addScore(key,label){
-  const pts=SCORE[key];S.score+=pts;S.scoreLog.push({label,pts});
+function addScore(key,label,pts=SCORE[key]){
+  S.score+=pts;S.scoreLog.push({label,pts});
   log(`　+${pts.toLocaleString()} ${label}`,'gold');scoreToast(label,pts);$('scoreLbl').textContent=`SCORE ${S.score.toLocaleString()}`;
 }
 /* end of a round (after any 1more): per-round damage bonus */
@@ -101,7 +101,7 @@ function freshState(stage=0){
   if(!RUN)newRun();
   const cpuMax=STAGES[stage].cpu,meMax=MAX_ME+HP_PER_LEVEL*(RUN.skills.hp||0);
   S={stage,cpuMax,meMax,me:Math.max(1,Math.min(meMax,RUN.hp??meMax)),cpu:cpuMax,deck:newDeck(),discard:[],hand:[],handMax:HAND+(RUN.skills.draw||0),
-    score:0,scoreLog:[],kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
+    score:0,scoreLog:[],overkill:0,kills:0,streak:0,tookDamage:false,timeUsed:0,roundDmg:0,chainReady:false,triple7Ready:false,cpuField:[],picked:[],results:[null,null,null],phase:'intro',round:0,onemore:false,dealt:0,clash:-1,revolution:false,blown:false,limit:LIMIT_START,skillActive:false,skillRounds:0,skillLevel:0,hpTrigger:false,hpTriggers:STAGES[stage].skill.hp.slice().sort((a,b)=>b-a)};
   refill();
 }
 /* a stage = one full battle. stages run 1 → build screen → 2 → build screen → 3 → all clear */
@@ -181,8 +181,26 @@ async function commit(){
   if(!oneMore){await cutIn("Let's Dance!",'',2.6);if(my!==seq)return;}
   else await wait(BEAT*.5);
   const T=oneMore?TEMPO.onemore:TEMPO.normal;document.documentElement.style.setProperty('--clashk',T.clash);
-  let wins=0,dead=false;
+  let wins=0,dead=false;const okChests=[];
   for(let i=0;i<3;i++){
+    /* OverKill: the CPU is already at 0, but the cards still on the table keep hitting. Nothing stands in their way, so the
+       number lands in full (like a 1more). Fast and loud: the hits get bigger toward the last card */
+    if(dead){
+      const p=S.picked[i],r=resolve(p,null,'OverKill',pat.mods[i]);
+      S.clash=i;render();await wait(BEAT*.3);if(my!==seq)return;
+      S.results[i]=r;S.clash=-1;blowAway('c'+i,i,false);
+      sfx('slash');slashFx(i);spark(i,true);quake(12+i*3);flash(i===2?'big':'red');
+      if(r.dmgCpu){
+        flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,4,{lethal:true,label:'OVER KILL',popBeats:.2,flyBeats:.25});
+        S.overkill=(S.overkill||0)+r.dmgCpu;S.roundDmg+=r.dmgCpu;sfxDamage(r.dmgCpu);fx('cpuBox','hitbig flash');
+      }
+      if(r.heal&&S.me>0){S.me=Math.min(S.meMax||MAX_ME,S.me+r.heal);fx('meBox','glow');floatNum('meBox','+'+r.heal,'heal big');}
+      render();fx('okCount','bump');
+      log(`${i+1}枚目 ${cardName(p)}(${r.pv}) → OverKill ${r.dmgCpu} ダメージ${r.mul&&r.mul!=='OverKill'?' ['+r.mul+']':''}`,'gold');
+      if(!oneMore&&S.cpuField[i]&&S.cpuField[i].chest)okChests.push(S.cpuField[i]);   /* opened after the finale, so the hits stay rapid */
+      await wait(BEAT*.45);if(my!==seq)return;
+      continue;
+    }
     const p=S.picked[i],c=(oneMore||S.revolution)?null:S.cpuField[i],r=resolve(p,c,S.revolution&&!oneMore?'Revolution':undefined,pat.mods[i]);
     /* Last Attack: this hit would finish the CPU */
     const lethal=r.dmgCpu>0&&r.dmgCpu>=S.cpu,slow=lethal?3:1;
@@ -205,6 +223,7 @@ async function commit(){
       const tier=dmgTier(r.dmgCpu);
       const flight=flyDamage($('m'+i),$('cpuHp'),r.dmgCpu,tier,{slow,lethal,popBeats:T.pop,flyBeats:T.fly});
       if(lethal){await flight;if(my!==seq)return;}   /* Last Attack: the slow number is the show, wait for it */
+      if(lethal)S.overkill=(S.overkill||0)+r.dmgCpu-S.cpu;   /* what the finishing blow dealt beyond 0 */
       S.cpu=Math.max(0,S.cpu-r.dmgCpu);sfxDamage(r.dmgCpu);S.roundDmg+=r.dmgCpu;
       while(S.cpu>0&&S.hpTriggers.length&&S.cpu<=S.hpTriggers[0]){const th=S.hpTriggers.shift();if(!S.skillActive){S.hpTrigger=true;log(`相手のHPが ${th} を割った。次のラウンドで敵のスキルが発動`,'bad');}}
       fx('cpuBox',tier>=2||lethal?'hitbig flash':'hit flash');
@@ -229,19 +248,21 @@ async function commit(){
     /* score: a kill = beating a real CPU card (not the 0s of 1more / Revolution) */
     if(r.win&&c){
       S.kills++;S.streak++;roundKills++;addScore('kill','撃破');
-      /* treasure: the card is owned and put in RUN.deck only, so it is dealt from the next stage on (not into this stage's pile) */
-      if(c.chest){const g=chestCard();if(g){const gk=g.suit+g.rank;RUN.owned[gk]=(RUN.owned[gk]||0)+1;RUN.deck[gk]=(RUN.deck[gk]||0)+1;
-        log(`　宝箱! ${cardName(g)} カードを獲得(次のステージから使用できます)`,'gold');
-        sfx('onemore');await chestCutIn(g);if(my!==seq)return;}}
+      if(c.chest){await openChest(c);if(my!==seq)return;}
       if(S.streak===5)addScore('streak5','ノーダメージで5枚撃破');
       else if(S.streak===10)addScore('streak10','ノーダメージで10枚撃破');
       else if(S.streak===15)addScore('streak15','ノーダメージで15枚撃破');
     }
+    /* Revolution blew the enemy's cards away: a chest among them still drops its card (no kill score, as before) */
+    if(S.revolution&&!oneMore&&S.cpuField[i]&&S.cpuField[i].chest){await openChest(S.cpuField[i]);if(my!==seq)return;}
     if(r.heal)log(`　♥ HPが ${r.heal} 回復 (${S.me})`,'gold');
     /* rest of this card's beat */
     await wait(BEAT*(T.beat-T.clash)*(lethal?slow:1));if(my!==seq)return;
-    if(S.me<=0||S.cpu<=0){dead=true;break;}
+    if(S.me<=0){dead=true;break;}
+    if(S.cpu<=0)dead=true;   /* won: the remaining cards go on as OverKill (branch at the top of the loop) */
   }
+  if(dead&&S.cpu<=0&&S.overkill>0){await overkillFinale(my);if(my!==seq)return;}
+  for(const c of okChests){await openChest(c);if(my!==seq)return;}
   await wait(BEAT*.6);if(my!==seq)return;   /* let the last hit settle before the round wraps up */
   const played=S.picked.slice();
   for(const p of S.picked){S.hand.splice(S.hand.indexOf(p),1);discardCard(p);}
@@ -311,9 +332,30 @@ async function gameOver(){
   $('overTitle').textContent=win?'ALL CLEAR':'YOU LOSE';$('overTitle').className='big '+(win?'win':'lose');
   $('overText').textContent=win?`${STAGES.length}ステージすべてクリア! 最終ステージはラウンド ${S.round}、残りHP ${S.me}。総獲得ポイント ${RUN.points.toLocaleString()}`:`${name} ラウンド ${S.round} で力尽きました。CPUの残りHP ${S.cpu}`;
   $('retryBtn').hidden=win;$('retryBuildBtn').hidden=win||!(RUN&&RUN.checkpoint);
+  /* defeat after stage 1: "最初から" throws the whole run away, so it asks first and stops being the highlighted button */
+  $('overBox').classList.remove('confirming');$('againBtn').classList.toggle('primary',win||!S.stage);$('retryBtn').classList.toggle('primary',!win&&!!S.stage);
   $('over').classList.add('show');
 }
 
+/* OverKill: damage dealt beyond 0 HP in the finishing round (the excess of the Last Attack + the cards after it).
+   It counts toward the round's 20 / 30 damage bonus, and pays OVERKILL_PER_DMG points per point of excess damage */
+async function overkillFinale(my){
+  const pts=S.overkill*OVERKILL_PER_DMG,label=`OverKill −${S.overkill} × ${OVERKILL_PER_DMG}`;
+  log(`OverKill! HP0を超えて ${S.overkill} ダメージ`,'gold');
+  if(S.overkill<OVERKILL_CUTIN_MIN){addScore('overkill',label,pts);return;}   /* a small excess: just the points */
+  sfx('onemore');flash('big');quake(18);
+  const c=center($('field'));burst(c.x,c.y,30,280,BEAT*2.6,16);burst(c.x,c.y,18,160,BEAT*1.8,9);
+  await cutIn('Over Kill!!','overkill',5,`HP0を超えて −${S.overkill} × ${OVERKILL_PER_DMG} ・ ボーナス +${pts.toLocaleString()}`);if(my!==seq)return;
+  addScore('overkill',label,pts);
+}
+/* treasure: the card is owned and put in RUN.deck only, so it is dealt from the next stage on (not into this stage's pile).
+   The chest is spent (chest=false) so the same enemy card can never pay out twice */
+async function openChest(c){
+  c.chest=false;const g=chestCard();if(!g)return;
+  const gk=g.suit+g.rank;RUN.owned[gk]=(RUN.owned[gk]||0)+1;RUN.deck[gk]=(RUN.deck[gk]||0)+1;
+  log(`　宝箱! ${cardName(g)} カードを獲得(次のステージから使用できます)`,'gold');
+  sfx('onemore');await chestCutIn(g);
+}
 /* a K-converted card (Sword/Clover) goes back to its original number once it hits the discard pile */
 function discardCard(p){if(p.origRank!=null){p.rank=p.origRank;delete p.origRank;delete p.buff;}S.discard.push(p);}
 /* 1more skip: end the round without playing the 1more (keeps the hand for later) */
