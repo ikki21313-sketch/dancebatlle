@@ -172,82 +172,6 @@ tools/sim.js でルールを再現した自動対戦ができる(node tools/sim.
 決定ボタンの左に「タイマー停止/再開」ボタンがある(点線枠)。本番向けに外すときはこのボタンだけ消せばよい
 
 
-■ ファイル構成
-index.html                本体(マークアップと読み込みタグのみ。ブラウザで開くだけで動く)
-css/base.css              土台とUI(色トークン, レイアウト, ボタン, HPバー, フィールド, 操作, 手札, ログ, オーバーレイ)
-css/cards.css             カードの見た目(表/裏, 選択, 有利/不利, 強化タグ, コンボ・スキル時の変化)
-css/effects.css           演出(カットイン, テープ, ダメージ数字, 1more/Last Attack/敵スキル)。レスポンシブは末尾
-js/config.js              定数とパラメータ(HP, 手札, 山札, 制限時間, 敵スキル, コンボ名と説明)。バランス調整はここ
-js/audio.js               BGM・効果音・音あり/なし
-js/deck.js                カードとルール(山札, 補充, コンボ判定, CPUの場, 相性の解決)
-js/fx.js                  演出(カットイン, テープ, フラッシュ, 揺れ, 飛ぶダメージ数字, スローモーション)
-js/render.js              描画(カード要素, 画面全体の再描画, タイマー表示, ログ)
-js/game.js                進行(状態, ラウンド, 選択, バトル, コンボ実行, 敵スキル, タイマー, 決着)
-js/build.js               デッキビルド画面(ポイント, スコア内訳, カード増減, スキル購入)
-js/main.js                起動(ボタンの配線, ホットリロード)
-  ※ モジュールではなく通常の <script> を上記の順で読み込む(file:// でも動くようにするため)。関数はグローバル
-tools/sim.js              バランス計測用シミュレーター
-Score.md                  スコアの仕様と確定した解釈
-Stage.md                  ステージごとの敵(HP・範囲・スキル・BGM)の仕様と確定した解釈
-DeckBuild.md              デッキビルドとスキルの仕様と確定した解釈
-music/Groovy_Ignition.mp3 BGM
-music/カードをめくる.mp3        CPUの配札音(参照用コピー: music/card_flip.mp3)
-music/カードを台の上に出す.mp3  手札選択音(参照用コピー: music/card_place.mp3)
-music/1more.mp3           1moreカットイン音(Revolutionのカットインでも使用)
-music/剣で斬る3.mp3        1moreバトルの斬撃音(参照用コピー: music/slash.mp3。Sword Comboのカットインでも使用)
-music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: music/fanfare.mp3)
-music/alert.mp3           敵スキル発動音
-music/dmageL.mp3 / dmageM.mp3 / dmageH.mp3  ダメージ着弾音(小/中/大)
-※ mock.html からは ASCII 名のコピーを参照している
-
-■ 敵のスキル
-発動条件
-  ・相手のHPがステージごとのしきい値を割った次のラウンド開始時に発動(スキル発動中に割った分は無視)。クールタイムによる発動はない(2026-09-19 廃止)
-  ・しきい値は相手のHPバー上に赤い縦棒で示す。使い切った縦棒は灰色になる
-発動時の演出
-  ・Enemy Skill Activation! カットイン(赤基調。副題にステージごとの内容) 効果音: alert.mp3
-  ・1moreのテープと同じ場所に、赤×黒の「DANGER!! DANGER!!」テープが貼られる(スキル中ずっと表示)
-  ・バトルフィールドの枠が赤くなり「ENEMY SKILL」バッジが付く
-効果(ステージごと。詳細は Stage.md)
-  ・1 イッチメーン: ♦♣♠の13(2回目〜14)を1ラウンド
-  ・2 ニーメン: ♦→♣→♠の順に13(2回目〜15)が3枚ずつ、3ラウンド
-  ・3 ラストリオン: ♦♣♠の15(2回目〜17)と、相性のない♥の13(2回目〜14)が1枚、2ラウンド
-  ・4 フォース(仮): ランダムなスートの18(2回目〜20)、2ラウンド
-  ・5 ラスボス(仮): 22(2回目〜24)と相性のない♥の17(2回目〜19)が1枚、3ラウンド
-  ・相性は通常どおり(♥は相性なし)。スキルカードは赤く脈打ち「SKILL」タグ付き。14以上は数字そのまま表示
-終了時
-  ・持続ラウンドが終わったら(1moreがあればその後)Skill Break! カットイン(金帯)
-  ・手札の上限が+1(スコア+10000)、以降クールタイム
-ログにも「相手のHPが150を割った。次のラウンドで敵のスキルが発動」「敵スキル 残りNラウンド」を出す
-
-
-■ ファイル構成
-index.html                本体(マークアップと読み込みタグのみ。ブラウザで開くだけで動く)
-css/base.css              土台とUI(色トークン, レイアウト, ボタン, HPバー, フィールド, 操作, 手札, ログ, オーバーレイ)
-css/cards.css             カードの見た目(表/裏, 選択, 有利/不利, 強化タグ, コンボ・スキル時の変化)
-css/effects.css           演出(カットイン, テープ, ダメージ数字, 1more/Last Attack/敵スキル)。レスポンシブは末尾
-js/config.js              定数とパラメータ(HP, 手札, 山札, 制限時間, 敵スキル, コンボ名と説明)。バランス調整はここ
-js/audio.js               BGM・効果音・音あり/なし
-js/deck.js                カードとルール(山札, 補充, コンボ判定, CPUの場, 相性の解決)
-js/fx.js                  演出(カットイン, テープ, フラッシュ, 揺れ, 飛ぶダメージ数字, スローモーション)
-js/render.js              描画(カード要素, 画面全体の再描画, タイマー表示, ログ)
-js/game.js                進行(状態, ラウンド, 選択, バトル, コンボ実行, 敵スキル, タイマー, 決着)
-js/build.js               デッキビルド画面(ポイント, スコア内訳, カード増減, スキル購入)
-js/main.js                起動(ボタンの配線, ホットリロード)
-  ※ モジュールではなく通常の <script> を上記の順で読み込む(file:// でも動くようにするため)。関数はグローバル
-tools/sim.js              バランス計測用シミュレーター
-Score.md                  スコアの仕様と確定した解釈
-DeckBuild.md              デッキビルドとスキルの仕様と確定した解釈
-music/Groovy_Ignition.mp3 BGM
-music/カードをめくる.mp3        CPUの配札音(参照用コピー: music/card_flip.mp3)
-music/カードを台の上に出す.mp3  手札選択音(参照用コピー: music/card_place.mp3)
-music/1more.mp3           1moreカットイン音(Revolutionのカットインでも使用)
-music/剣で斬る3.mp3        1moreバトルの斬撃音(参照用コピー: music/slash.mp3。Sword Comboのカットインでも使用)
-music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: music/fanfare.mp3)
-music/alert.mp3           敵スキル発動音
-music/dmageL.mp3 / dmageM.mp3 / dmageH.mp3  ダメージ着弾音(小/中/大)
-※ mock.html からは ASCII 名のコピーを参照している
-
 ■ 敵のスキル
 発動条件(どちらかを満たすと、次のラウンド開始時に発動)
   ・通常ラウンドが4回経過した(初回は5ラウンド目。スキル終了後は4ラウンドのクールタイム明け)
@@ -266,3 +190,35 @@ music/dmageL.mp3 / dmageM.mp3 / dmageH.mp3  ダメージ着弾音(小/中/大)
   ・DANGER!! DANGER!!」テープ演出を解除
 ログにも「相手のHPが150を割った。次のラウンドで敵のスキルが発動」「敵スキル 残りNラウンド」を出す
 パラメータは mock.html の SKILL_CD / SKILL_LEN / SKILL_HP_STEP / SKILL_BASE_RANK で調整する
+
+
+■ 公開先
+GitHub: https://github.com/ikki21313-sketch/dancebatlle
+GitHub Pages: https://ikki21313-sketch.github.io/dancebatlle/ (main ブランチのルートを配信。push すると1分ほどで更新)
+
+■ ファイル構成
+index.html                本体(マークアップと読み込みタグのみ。ブラウザで開くだけで動く)
+css/base.css              土台とUI(色トークン, レイアウト, ボタン, HPバー, フィールド, 操作, 手札, ログ, オーバーレイ)
+css/cards.css             カードの見た目(表/裏, 選択, 有利/不利, 強化タグ, コンボ・スキル時の変化)
+css/effects.css           演出(カットイン, テープ, ダメージ数字, 1more/Last Attack/敵スキル)。レスポンシブは末尾
+js/config.js              定数とパラメータ(HP, 手札, 山札, 制限時間, 敵スキル, コンボ名と説明)。バランス調整はここ
+js/audio.js               BGM・効果音・音あり/なし
+js/deck.js                カードとルール(山札, 補充, コンボ判定, CPUの場, 相性の解決)
+js/fx.js                  演出(カットイン, テープ, フラッシュ, 揺れ, 飛ぶダメージ数字, スローモーション)
+js/render.js              描画(カード要素, 画面全体の再描画, タイマー表示, ログ)
+js/game.js                進行(状態, ラウンド, 選択, バトル, コンボ実行, 敵スキル, タイマー, 決着)
+js/build.js               デッキビルド画面(ポイント, スコア内訳, カード増減, スキル購入)
+js/main.js                起動(ボタンの配線, ホットリロード)
+  ※ モジュールではなく通常の <script> を上記の順で読み込む(file:// でも動くようにするため)。関数はグローバル
+tools/sim.js              バランス計測用シミュレーター
+Score.md                  スコアの仕様と確定した解釈
+DeckBuild.md              デッキビルドとスキルの仕様と確定した解釈
+music/Groovy_Ignition.mp3 BGM
+music/カードをめくる.mp3        CPUの配札音(参照用コピー: music/card_flip.mp3)
+music/カードを台の上に出す.mp3  手札選択音(参照用コピー: music/card_place.mp3)
+music/1more.mp3           1moreカットイン音(Revolutionのカットインでも使用)
+music/剣で斬る3.mp3        1moreバトルの斬撃音(参照用コピー: music/slash.mp3。Sword Comboのカットインでも使用)
+music/栄光のファンファーレ.mp3   勝利時のBGM(参照用コピー: music/fanfare.mp3)
+music/alert.mp3           敵スキル発動音
+music/dmageL.mp3 / dmageM.mp3 / dmageH.mp3  ダメージ着弾音(小/中/大)
+※ mock.html からは ASCII 名のコピーを参照している
