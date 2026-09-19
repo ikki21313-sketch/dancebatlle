@@ -15,7 +15,7 @@ const TUTORIAL=[
      return r;}},
   {title:'1 More!',lead:'3枚ぜんぶ勝って、スートがバラバラなら 1more。',
    shots:[{src:'img/tut_1more.png',cap:'相手は 0。数字がそのまま入る'},{src:'img/tut_skill.png',cap:'敵のスキル中は 13 が並ぶ。耐えれば Skill Break!'}],
-   body:'相手は <b>0</b>。こっちの数字が丸ごとダメージになる追い打ちタイム。温存したいなら <span class="k">スキップ</span> もOK。<br>敵のHPバーの <b>赤い縦棒</b> まで削るとスキルが来る。13以上を並べてくるけど、耐えきれば <span class="k">Skill Break!</span> で手札の上限+1。<br><span class="k">宝箱</span> 付きのカードを倒すと、カードを1枚ゲット。',
+   body:'相手は <b>0</b>。こっちの数字が丸ごとダメージになる追い打ちタイム。温存したいなら <span class="k">スキップ</span> もOK。<br>敵のHPバーの <b>赤い縦棒</b> まで削るとスキルが来る。13以上を並べてくるけど、耐えきれば <span class="k">Skill Break!</span> で手札の上限+1。<br><span class="k">宝箱</span> 付きのカードを倒すと、カードを1枚ゲット(次のステージから使える)。',
    illo(){const r=el('div','tut-row');
      const b=backEl();r.append(col(b,'相手は 0'),el('span','tut-vs','VS'),col(tc('D',10,'won'),'そのまま','good'),col(el('span','tut-num gold','−10'),'10ダメージ','gold'));
      return r;}},

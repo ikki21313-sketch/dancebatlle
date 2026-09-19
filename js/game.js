@@ -195,6 +195,8 @@ async function commit(){
     await wait(BEAT*T.clash*slow);if(my!==seq)return;
     /* impact = damage, in the same beat: HP drops, shake, sound. The number's flight is afterglow (not awaited) */
     S.results[i]=r;S.clash=-1;
+    /* the loser is knocked away right now (from its clash pose, before the re-render hides it) */
+    if(r.dmgCpu)blowAway('c'+i,i,false);else if(r.dmgMe)blowAway('m'+i,i,true);
     if(oneMore||lethal){sfx('slash');slashFx(i);quake(lethal?10:6);}
     if(r.win)wins++;
     spark(i,oneMore||lethal);
@@ -226,8 +228,10 @@ async function commit(){
     /* score: a kill = beating a real CPU card (not the 0s of 1more / Revolution) */
     if(r.win&&c){
       S.kills++;S.streak++;roundKills++;addScore('kill','撃破');
-      if(c.chest){const g=chestCard();if(g){RUN.deck[g.suit+g.rank]=(RUN.deck[g.suit+g.rank]||0)+1;S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,{id:++uid,suit:g.suit,rank:g.rank});
-        log(`　宝箱! ${cardName(g)} をデッキに獲得(山札にも1枚追加)`,'gold');scoreToast(`宝箱 ${cardName(g)} を獲得`,0);}}
+      /* treasure: the card joins RUN.deck only, so it is dealt from the next stage on (not into this stage's pile) */
+      if(c.chest){const g=chestCard();if(g){RUN.deck[g.suit+g.rank]=(RUN.deck[g.suit+g.rank]||0)+1;
+        log(`　宝箱! ${cardName(g)} カードを獲得(次のステージから使用できます)`,'gold');
+        sfx('onemore');await chestCutIn(g);if(my!==seq)return;}}
       if(S.streak===5)addScore('streak5','ノーダメージで5枚撃破');
       else if(S.streak===10)addScore('streak10','ノーダメージで10枚撃破');
       else if(S.streak===15)addScore('streak15','ノーダメージで15枚撃破');
@@ -250,8 +254,8 @@ async function commit(){
     log('3枚すべてに勝利! 1more 発動。好きな3枚を追加で出せます','gold');
     addScore('onemore','1more');
     S.chainReady=!!RUN.skills.chain&&played.every(c=>c.rank>=7);
-    /* the CPU's cards blow away before the 1more cut-in (unless Revolution already did it) */
-    if(!S.revolution){S.results=[null,null,null];S.blown=true;render();await wait(BEAT*2);if(my!==seq)return;S.blown=false;}
+    /* the CPU's cards are already gone (each was knocked away when it lost). Baton touch: your 3 winners fall back toward the hand */
+    scatterBack();render();await wait(BEAT*1.5);if(my!==seq)return;
     S.phase='onemore';S.onemore=true;S.results=[null,null,null];
     render();
     sfx('onemore');omfxShow();
@@ -263,7 +267,7 @@ async function commit(){
     S.triple7Ready=false;
     const before=S.hand.length;refill();
     log(`スキル: トリプル7 → 手札を ${before} 枚から ${S.hand.length} 枚に補充してさらに1more!`,'gold');addScore('onemore','1more(トリプル7)');
-    S.phase='onemore';S.results=[null,null,null];render();
+    scatterBack();S.phase='onemore';S.results=[null,null,null];render();
     sfx('onemore');await cutIn('1 More!','',2.6,'トリプル7: 手札を補充してさらに1more');if(my!==seq)return;
     startTimer(S.limit);render();return;
   }
@@ -271,7 +275,7 @@ async function commit(){
     /* skill: 7+ cards → the 1more chains into one more 1more */
     S.chainReady=false;
     log('スキル: 7以上のカードで1more → さらに1more!','gold');addScore('onemore','1more(連鎖)');
-    S.phase='onemore';S.results=[null,null,null];render();
+    scatterBack();S.phase='onemore';S.results=[null,null,null];render();
     sfx('onemore');await cutIn('1 More!','',2.6,'スキル: 7以上の1more → さらに1more');if(my!==seq)return;
     startTimer(S.limit);render();return;
   }

@@ -23,6 +23,38 @@ function cutIn(text,style='',beats=2.4,sub=''){
   return wait(dur).then(()=>{el.classList.remove('play');$('dimmer').classList.remove('show');});
 }
 
+/* treasure: the won card shown large above the text. The card joins the deck from the next stage */
+function chestCutIn(g){
+  const p=$('cutinPrize');p.innerHTML='';p.appendChild(cardEl(g));
+  return cutIn(`${cardName(g)} カードを獲得!`,'chest',5,'次のステージから使用できます').then(()=>{p.innerHTML='';});
+}
+
+/* the loser of a clash is knocked off the table at the moment of impact. A detached copy flies, so re-renders can't cut it short */
+function flyClone(src,cls,vars){
+  const r=src.getBoundingClientRect(),w=src.offsetWidth,h=src.offsetHeight,g=src.cloneNode(true);
+  g.classList.remove('clash-cpu','clash-me','big','deal');g.classList.add(...cls.split(' '));
+  g.style.cssText=`position:fixed;left:${r.left+r.width/2-w/2}px;top:${r.top+r.height/2-h/2}px;width:${w}px;height:${h}px;margin:0;z-index:30;pointer-events:none`;
+  for(const k in vars)g.style.setProperty(k,vars[k]);
+  document.body.appendChild(g);
+  g.addEventListener('animationend',e=>{if(e.target===g)g.remove();});setTimeout(()=>g.remove(),BEAT*6);
+  return g;
+}
+function blowAway(slotId,i,down){
+  const src=$(slotId).firstElementChild;if(!src||!src.classList.contains('card'))return;
+  flyClone(src,'blown hit',{'--bx':((i-1)*180+(i===1?(down?-70:70):0))+'px','--by':(down?300:-300)+'px','--br':((i%2?-1:1)*(down?-1:1)*540)+'deg'}).classList.remove('won');
+}
+/* baton touch into a 1more: your 3 winners fall back and fan out toward the hand, and the hand steps forward to take over.
+   Call it while the played cards are still in the DOM (before the next render) */
+function scatterBack(){
+  const hand=$('hand'),hr=hand.getBoundingClientRect();
+  for(let i=0;i<3;i++){
+    const src=$('m'+i).firstElementChild;if(!src||!src.classList.contains('card')||src.style.visibility==='hidden')continue;
+    const r=src.getBoundingClientRect();
+    flyClone(src,'retreat',{'--bx':((i-1)*150)+'px','--by':(hr.top+hr.height/2-(r.top+r.height/2))+'px','--br':((i-1)*20)+'deg'}).style.animationDelay=(i*BEAT*.08)+'ms';
+  }
+  hand.classList.add('tagin');setTimeout(()=>hand.classList.remove('tagin'),BEAT*1.5);
+}
+
 /* ---- small effects ---- */
 function fx(id,cls){const e=$(id);cls.split(' ').forEach(c=>e.classList.remove(c));void e.offsetWidth;cls.split(' ').forEach(c=>e.classList.add(c));}
 function floatNum(id,text,cls){const f=document.createElement('span');f.className='float '+cls;f.textContent=text;$(id).appendChild(f);setTimeout(()=>f.remove(),950);}

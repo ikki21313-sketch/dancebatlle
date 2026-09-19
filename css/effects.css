@@ -89,6 +89,18 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
 
 .cutin.break .band{background:var(--gold)}
 .cutin.break .txt{color:var(--gold-ink)}
+/* treasure: the won card, a little larger than on the table, above the text */
+.cutin .prize{display:none}
+.cutin.chest .prize{display:block;position:relative;opacity:0;margin-bottom:8px;filter:drop-shadow(0 0 18px rgba(242,193,0,.9)) drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.cutin.chest.play .prize{animation:prizeIn var(--dur) cubic-bezier(.25,.9,.3,1) forwards}
+@keyframes prizeIn{0%{opacity:0;transform:translateY(40px) scale(.3) rotate(-14deg)}18%{opacity:1;transform:translateY(-6px) scale(1.12) rotate(3deg)}28%{transform:none}80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-30px) scale(.9)}}
+.cutin .prize .card{width:130px;height:180px;padding:6px 9px;border-width:5px}
+.cutin .prize .card .corner{font-size:31px}.cutin .prize .card .corner span{font-size:22px}
+.cutin .prize .card .mid .hand-ico{font-size:50px}.cutin .prize .card .mid .lbl{font-size:15px}
+.cutin.chest .band{background:#1a1204;border-top:4px solid #f2c100;border-bottom:4px solid #f2c100;height:350px}
+.cutin.chest .band::before,.cutin.chest .band::after{background:repeating-linear-gradient(90deg,#f2c100 0 18px,transparent 18px 36px);opacity:.6;height:6px}
+.cutin.chest .txt,.cutin.chest .txt.long{font-family:var(--body);font-weight:900;font-size:44px;letter-spacing:.06em;color:#ffe27a;text-shadow:0 0 14px rgba(242,193,0,.9),0 0 36px rgba(242,193,0,.6);text-transform:none}
+.cutin.chest .sub{color:#fff3c4}
 /* enemy skill: DANGER tapes (same mechanics as the 1more tapes, red/black) */
 .omfx.danger .tape{background:#e01b1b;color:#111;text-shadow:0 0 6px rgba(255,255,255,.35)}
 .omfx.danger .tape::before,.omfx.danger .tape::after{background:repeating-linear-gradient(-45deg,#111 0 10px,#e01b1b 10px 20px)}
@@ -131,10 +143,11 @@ body.slowmo .lane.focus{z-index:5;transform:scale(1.12);transition:transform .6s
   .cutin.last .txt{font-size:44px}.cutin.last .band{height:120px}
   .dmgfly.t3{--sz:60px}.dmgfly.t4{--sz:76px}.dmgfly.lethal{--sz:100px}
   .cutin .sub{font-size:13px}.cutin.has-sub .band{height:130px}
+  .cutin.chest .band{height:310px}.cutin.chest .txt,.cutin.chest .txt.long{font-size:24px}
   .tape{height:34px;line-height:34px;font-size:20px}
   .hpnum{font-size:20px}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
-  .cutin.play .band{transform:skewY(-5deg) translateX(0)}.cutin.play .txt{opacity:1}
+  .cutin.play .band{transform:skewY(-5deg) translateX(0)}.cutin.play .txt,.cutin.chest.play .prize{opacity:1}
 }

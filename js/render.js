@@ -49,18 +49,19 @@ function render(){
     lane.classList.toggle('active',S.clash===i);
     const r=S.results[i];
     if(S.blown&&S.cpuField[i]){const e=cardEl(S.cpuField[i]);e.classList.add('blown');e.style.setProperty('--bx',((i-1)*160+60)+'px');e.style.setProperty('--br',(i%2?-1:1)*540+'deg');c.appendChild(e);}
-    else if(S.onemore||S.revolution)c.appendChild(backEl());
+    else if(S.onemore||S.revolution){const e=backEl();if(r&&r.dmgCpu)e.style.visibility='hidden';c.appendChild(e);}
     else if(S.cpuField[i]&&(!dealing||i<S.dealt)){
       const e=cardEl(S.cpuField[i]);
       if(dealing&&i===S.dealt-1)e.classList.add('deal');
       if(S.clash===i)e.classList.add('clash-cpu');
-      if(r&&(r.dmgCpu||r.dmgMe))e.classList.add(r.dmgCpu?'lost':'won');
+      /* the loser has been blown off the table (fx.js blowAway): keep the slot's size, hide the card */
+      if(r&&r.dmgCpu)e.style.visibility='hidden';else if(r&&r.dmgMe)e.classList.add('won');
       c.appendChild(e);
     }else if(S.phase!=='intro'){c.className='slot empty';c.textContent='CPU';}
     if(S.picked[i]){
       const e=cardEl(S.picked[i]);
       if(S.clash===i){e.classList.add('clash-me');if(S.onemore)e.classList.add('big');}
-      if(r&&(r.dmgCpu||r.dmgMe))e.classList.add(r.dmgCpu?'won':'lost');
+      if(r&&r.dmgMe)e.style.visibility='hidden';else if(r&&r.dmgCpu)e.classList.add('won');
       m.appendChild(e);
     }else{m.className='slot empty';m.textContent=`${i+1}枚目`;}
     v.className='verdict';
