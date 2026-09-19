@@ -23,7 +23,9 @@ function cardEl(c,small){
     +`<div class="corner bottom">${rk}<span>${s.sym}</span></div>`;
   if(c.buff){const b=document.createElement('span');b.className='buff-tag';b.textContent={sword:'⚔ K化',copy:'◆ 複製',clover:'♣ K化'}[c.buff]||c.buff;d.appendChild(b);}
   if(c.skill){const b=document.createElement('span');b.className='buff-tag';b.textContent='SKILL';d.appendChild(b);}
-  if(c.chest){const b=document.createElement('span');b.className='chest-tag';b.title='倒すとカードを1枚獲得';b.textContent='宝箱';d.appendChild(b);}
+  if(c.chest){const b=document.createElement('span');b.className='chest-tag';b.title='倒すとカードを1枚獲得';
+    b.innerHTML='<svg viewBox="0 0 34 30" aria-hidden="true"><rect x="2" y="11" width="30" height="17" rx="3" fill="#8a5a1e" stroke="#f2c100" stroke-width="2"/><path d="M2 14 a15 9 0 0 1 30 0 v3 H2z" fill="#c8901f" stroke="#f2c100" stroke-width="2"/><rect x="2" y="15" width="30" height="3" fill="#f2c100"/><rect x="14" y="13" width="6" height="8" rx="1.5" fill="#fff3b0" stroke="#3a2600" stroke-width="1"/><circle cx="17" cy="16" r="1.2" fill="#3a2600"/></svg><span>TREASURE</span>';
+    d.appendChild(b);}
   if(c.spawn)d.classList.add('spawn');else if(c.flash)d.classList.add('buffed');else if(c.done)d.classList.add('buffdone');
   if(c.fxLabel){const f=document.createElement('span');f.className='fx-label'+(c.done?' static':'');f.textContent=c.fxLabel;d.appendChild(f);}
   return d;
